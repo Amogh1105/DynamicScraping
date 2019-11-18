@@ -1,0 +1,463 @@
+﻿@model IEnumerable<ScrapingMVC.Models.CompanyDetails>
+
+
+@{
+    ViewBag.Title = "Result";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>Details</title>
+    <style>
+        /*table, tr, td, th {
+            border: 1px solid black;
+            border-collapse: collapse;
+        }
+
+            tr.header {
+                cursor: pointer;
+            }*/
+
+        td:empty {
+            display: none;
+        }
+        td {
+            padding: 0 15px 0 15px;
+        }
+      
+    </style>
+    <script src="~/Scripts/jquery-1.10.2.js"></script>
+    <script src="~/Scripts/jquery-1.10.2.min.js"></script>
+    <script src="~/Scripts/bootstrap.min.js"></script>
+    <script src="~/vendors/datatables.net/js/jquery.dataTables.js"></script>
+    <script src="https://code.jquery.com/jquery-3.3.1.js"></script>
+    <script src="https://cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/1.5.6/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
+    <script src="https://cdn.datatables.net/buttons/1.5.6/js/buttons.html5.min.js"></script>
+    <script src="~/vendors/datatables.net/js/jquery.dataTables.min.js"></script>
+    <script type="text/javascript">
+        $('.collapse').on('show.bs.collapse', function () {
+            var groupId = $('#expander').attr('data-group-id');
+            if (groupId) {
+                $('#grandparentIcon').html('v');
+                $('#grandparent1Icon').html('v');
+                $('#grandparent2Icon').html('v');
+                $('#grandparent3Icon').html('v');
+                $('#grandparent4Icon').html('v');
+                $('#grandparent5Icon').html('v');
+
+
+
+            }
+        });
+
+      
+
+    </script>
+</head>
+<body>
+    <div class="list-group-item" id="grandparent">
+        <div id="expander" data-target="#grandparentContent" data-toggle="collapse" data-group-id="grandparent" data-role="expander">
+            <ul class="list-inline">
+                <li id="grandparentIcon">&gt;</li>
+                <li style="font-size:15px;"><b>Company Details</b></li>
+            </ul>
+        </div>
+        <div class="collapse" id="grandparentContent" aria-expanded="true">
+            <table class="table table-striped table-hover">
+
+                <tr>
+                    <td>
+                        @Html.DisplayNameFor(model => model.cin)
+                    </td> 
+
+
+                    @foreach (var item in Model)
+                    {
+                        <td>
+                            @Html.DisplayFor(modelItem => item.cin)
+                        </td>
+                    }
+                </tr>
+
+                <tr>
+                    <td>
+                        @Html.DisplayNameFor(model => model.companyname)
+                    </td>
+                    @foreach (var item in Model)
+                    {
+                        <td>
+                            @Html.DisplayFor(modelItem => item.companyname)
+                        </td>
+                    }
+                </tr>
+
+                <tr>
+                    <td>
+                        @Html.DisplayNameFor(model => model.companystatus)
+                    </td>
+                    @foreach (var item in Model)
+                    {
+                        <td>
+                            @Html.DisplayFor(modelItem => item.companystatus)
+                        </td>
+                    }
+                </tr>
+                <tr>
+                    <td>
+                        @Html.DisplayNameFor(model => model.roc)
+                    </td>
+                    @foreach (var item in Model)
+                    {
+                        <td>
+                            @Html.DisplayFor(modelItem => item.roc)
+                        </td>
+                    }
+                </tr>
+                <tr>
+                    <td>
+                        @Html.DisplayNameFor(model => model.registrationnumber)
+                    </td>
+                    @foreach (var item in Model)
+                    {
+                        <td>
+                            @Html.DisplayFor(modelItem => item.registrationnumber)
+                        </td>
+                    }
+                </tr>
+                <tr>
+                    <td>
+                        @Html.DisplayNameFor(model => model.companycategory)
+                    </td>
+                    @foreach (var item in Model)
+                    {
+                        <td>
+                            @Html.DisplayFor(modelItem => item.companycategory)
+                        </td>
+                    }
+                </tr>
+                <tr>
+                    <td>
+                        @Html.DisplayNameFor(model => model.companysubcategory)
+                    </td>
+                    @foreach (var item in Model)
+                    {
+                        <td>
+                            @Html.DisplayFor(modelItem => item.companysubcategory)
+                        </td>
+                    }
+                </tr>
+                <tr>
+                    <td>
+                        @Html.DisplayNameFor(model => model.companyclass)
+                    </td>
+                    @foreach (var item in Model)
+                    {
+                        <td>
+                            @Html.DisplayFor(modelItem => item.companyclass)
+                        </td>
+                    }
+                </tr>
+                <tr>
+                    <td>
+                        @Html.DisplayNameFor(model => model.dateofincorporation)
+                    </td>
+                    @foreach (var item in Model)
+                    {
+                        <td>
+                            @Html.DisplayFor(modelItem => item.dateofincorporation)
+                        </td>
+                    }
+                </tr>
+                <tr>
+                    <td>
+                        @Html.DisplayNameFor(model => model.ageofcompany)
+                    </td>
+                    @foreach (var item in Model)
+                    {
+                        <td>
+                            @Html.DisplayFor(modelItem => item.ageofcompany)
+                        </td>
+                    }
+                </tr>
+
+
+                <tr>
+                    <td>
+                        @Html.DisplayNameFor(model => model.activity)
+                    </td>
+                    @foreach (var item in Model)
+                    {
+                        <td>
+                            @Html.DisplayFor(modelItem => item.activity)
+                        </td>
+                    }
+                </tr>
+
+                <tr>
+                    <td>
+                        @Html.DisplayNameFor(model => model.numberofmembers)
+                    </td>
+                    @foreach (var item in Model)
+                    {
+                        <td>
+                            @Html.DisplayFor(modelItem => item.numberofmembers)
+                        </td>
+                    }
+                </tr>
+
+
+            </table>
+            <br />
+            <br />
+
+
+        </div>
+        </div>
+
+    <div class="list-group-item" id="grandparent">
+        <div id="expander" data-target="#grandparent1Content" data-toggle="collapse" data-group-id="grandparent" data-role="expander">
+            <ul class="list-inline">
+                <li id="grandparent1Icon">&gt;</li>
+                <li style="font-size:15px;"><b>Share Capital</b></li>
+            </ul>
+        </div>
+        <div class="collapse" id="grandparent1Content" aria-expanded="true">
+            <table class="table table-striped table-hover">
+                <tr>
+                    <td>
+                        @Html.DisplayNameFor(model => model.authorizedcapital)
+                    </td>
+                    @foreach (var item in Model)
+                    {
+                        <td>
+                            @Html.DisplayFor(modelItem => item.authorizedcapital)
+                        </td>
+                    }
+                </tr>
+
+                <tr>
+                    <td>
+                        @Html.DisplayNameFor(model => model.paidupcapital)
+                    </td>
+                    @foreach (var item in Model)
+                    {
+                        <td>
+                            @Html.DisplayFor(modelItem => item.paidupcapital)
+                        </td>
+                    }
+                </tr>
+
+
+            </table>
+            <br />
+            <br />
+
+
+        </div>
+    </div>
+
+    <div class="list-group-item" id="grandparent">
+        <div id="expander" data-target="#grandparent2Content" data-toggle="collapse" data-group-id="grandparent" data-role="expander">
+            <ul class="list-inline">
+                <li id="grandparent2Icon">&gt;</li>
+                <li style="font-size:15px;"><b>Annual Compliance</b></li>
+                        </ul>
+        </div>
+        <div class="collapse" id="grandparent2Content" aria-expanded="true">
+            <table class="table table-striped table-hover">
+                <tr>
+                    <td>
+                        @Html.DisplayNameFor(model => model.listingstatus)
+                    </td>
+                    @foreach (var item in Model)
+                    {
+                        <td>
+                            @Html.DisplayFor(modelItem => item.listingstatus)
+                        </td>
+                    }
+                </tr>
+
+                <tr>
+                    <td>
+                        @Html.DisplayNameFor(model => model.dateoflastgeneralmeeting)
+                    </td>
+                    @foreach (var item in Model)
+                    {
+                        <td>
+                            @Html.DisplayFor(modelItem => item.dateoflastgeneralmeeting)
+                        </td>
+                    }
+                </tr>
+
+                <tr>
+                    <td>
+                        @Html.DisplayNameFor(model => model.dateoflastestbalancesheet)
+                    </td>
+                    @foreach (var item in Model)
+                    {
+                        <td>
+                            @Html.DisplayFor(modelItem => item.dateoflastestbalancesheet)
+                        </td>
+                    }
+                </tr>
+
+
+            </table>
+            <br />
+            <br />
+
+
+        </div>
+    </div>
+
+    <div class="list-group-item" id="grandparent">
+        <div id="expander" data-target="#grandparent3Content" data-toggle="collapse" data-group-id="grandparent" data-role="expander">
+            <ul class="list-inline">
+                <li id="grandparent3Icon">&gt;</li>
+                <li style="font-size:15px;"><b>Director Details</b></li>
+                        </ul>
+        </div>
+        <div class="collapse" id="grandparent3Content" aria-expanded="true">
+
+            <table class="table table-bordered table-responsive table-hover">
+                <tr>
+                    <th>
+                        @Html.DisplayNameFor(model => model.din)
+                    </th>
+                    <th>
+                        @Html.DisplayNameFor(model => model.directorname)
+                    </th>
+                    <th>
+                        @Html.DisplayNameFor(model => model.designation)
+                    </th>
+                    <th>
+                        @Html.DisplayNameFor(model => model.appointmentdate)
+                    </th>
+
+                </tr>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td>@Html.DisplayFor(modelItem => item.din)</td>
+                        <td>@Html.DisplayFor(modelItem => item.directorname)</td>
+                        <td>@Html.DisplayFor(modelItem => item.designation)</td>
+                        <td>@Html.DisplayFor(modelItem => item.appointmentdate)</td>
+
+
+
+
+                    </tr>
+                }
+            </table>
+        </div>
+        </div>
+
+    <div class="list-group-item" id="grandparent">
+        <div id="expander" data-target="#grandparent4Content" data-toggle="collapse" data-group-id="grandparent" data-role="expander">
+            <ul class="list-inline">
+                <li id="grandparent4Icon">&gt;</li>
+                <li style="font-size:15px;"><b>Charges Details</b></li>           
+             </ul>
+        </div>
+        <div class="collapse" id="grandparent4Content" aria-expanded="true">
+            <table class="table table-bordered table-responsive table-hover">
+                <tr>
+                    <th>
+                        @Html.DisplayNameFor(model => model.chargeid)
+                    </th>
+                    <th>
+                        @Html.DisplayNameFor(model => model.creationdate)
+                    </th>
+                    <th>
+                        @Html.DisplayNameFor(model => model.modificationdate)
+                    </th>
+                    <th>
+                        @Html.DisplayNameFor(model => model.closuredate)
+                    </th>
+                    <th>
+                        @Html.DisplayNameFor(model => model.assetsundercharge)
+                    </th>
+                    <th>
+                        @Html.DisplayNameFor(model => model.amount)
+                    </th>
+                    <th>
+                        @Html.DisplayNameFor(model => model.chargeholder)
+                    </th>
+
+                </tr>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td>@Html.DisplayFor(modelItem => item.chargeid)</td>
+                        <td>@Html.DisplayFor(modelItem => item.creationdate)</td>
+                        <td>@Html.DisplayFor(modelItem => item.modificationdate)</td>
+                        <td>@Html.DisplayFor(modelItem => item.closuredate)</td>
+                        <td>@Html.DisplayFor(modelItem => item.assetsundercharge)</td>
+                        <td>@Html.DisplayFor(modelItem => item.amount)</td>
+                        <td>@Html.DisplayFor(modelItem => item.chargeholder)</td>
+
+
+
+
+
+                    </tr>
+                }
+            </table>
+        </div>
+    </div>
+
+    <div class="list-group-item" id="grandparent">
+        <div id="expander" data-target="#grandparent5Content" data-toggle="collapse" data-group-id="grandparent" data-role="expander">
+            <ul class="list-inline">
+                <li id="grandparent5Icon">&gt;</li>
+                <li style="font-size:15px;"><b>Establishment Details</b></li>           
+             </ul>
+        </div>
+        <div class="collapse" id="grandparent5Content" aria-expanded="true">
+            <table class="table table-bordered table-responsive table-hover" id="establishmenttable">
+
+                <tr>
+
+                    <th>
+                        @Html.DisplayNameFor(model => model.establishmentname)
+                    </th>
+                    <th>
+                        @Html.DisplayNameFor(model => model.city)
+                    </th>
+                    <th>
+                        @Html.DisplayNameFor(model => model.pincode)
+                    </th>
+                    <th>
+                        @Html.DisplayNameFor(model => model.address)
+                    </th>
+
+
+                </tr>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+
+                        <tr>
+                            <td>@Html.DisplayFor(modelItem => item.establishmentname)</td>
+                            <td>@Html.DisplayFor(modelItem => item.city)</td>
+                            <td>@Html.DisplayFor(modelItem => item.pincode)</td>
+                            <td>@Html.DisplayFor(modelItem => item.address)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+            @Html.ActionLink("Back", "Index", "Home", new { style = "font-size:20px; color: blue" })
+
+
+</body>
+</html>
+
