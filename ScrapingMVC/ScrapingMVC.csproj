@@ -233,6 +233,7 @@
     <Content Include="Content\toastr.less" />
     <Content Include="BatchFile\zauba.bat" />
     <Content Include="app.manifest" />
+    <None Include="Properties\PublishProfiles\DynamicScraping.pubxml" />
     <None Include="Scripts\jquery-1.10.2.intellisense.js" />
     <Content Include="Scripts\jquery-1.10.2.js" />
     <Content Include="Scripts\jquery-1.10.2.min.js" />
