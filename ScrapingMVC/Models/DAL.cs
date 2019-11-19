@@ -30,6 +30,13 @@ namespace ScrapingMVC.Models
                 // Go to the home page
                 browser.Navigate().GoToUrl("https://www.zaubacorp.com/");
 
+                //PROXY
+
+                //browser.FindElementByXPath("//*[@id='url-form-wrap']/form/div[2]/button").Click();
+
+                //System.Threading.Thread.Sleep(5000);
+
+
                 //GET DATA FROM UNINSERTED TABLE
 
                 string query = ConfigurationManager.ConnectionStrings["connString"].ConnectionString;
@@ -83,7 +90,7 @@ namespace ScrapingMVC.Models
                         //Name or CIN IS CLICKED IN BROWSER!!
 
                         //SCRAP DATA
-
+                        //COMPANY DETAILS STARTS
                         var companycin = browser.FindElementByXPath("//div[@class='col-lg-12 col-md-12 col-sm-12 col-xs-12'][last()-4]//table//thead//tr/td[2]").Text;
                         var title = browser.FindElementsByXPath("//div[@class='col-lg-12 col-md-12 col-sm-12 col-xs-12'][last()-4]//tbody//tr");
 
@@ -274,8 +281,9 @@ namespace ScrapingMVC.Models
 
                             var establishmenttable = browser.FindElementByXPath("//div[@class='col-12'][position()=3]//table");
                             IReadOnlyCollection<IWebElement> establishmentrows = browser.FindElementsByXPath(("//div[@class='col-12'][position()=3]//tbody//tr"));
+                            var noestablishmentfound = browser.FindElementByXPath("//div[@class='col-12'][position()=3]//table//tbody//tr//td//p").Text;
 
-                            if (establishmentrows.Count>0)
+                            if (noestablishmentfound!="No establishments found")
                             {
                                 IReadOnlyCollection<IWebElement> rowsr = browser.FindElementsByXPath(("//div[@class='col-12'][position()=3]//tbody//tr"));
                                 IReadOnlyCollection<IWebElement> colsc = browser.FindElementsByXPath(("//div[@class='col-12'][position()=3]//table//thead//td"));
@@ -1690,7 +1698,7 @@ namespace ScrapingMVC.Models
                         myCommand.ExecuteNonQuery();
 
                         //EXECUTE BAT
-                        Scrapper();
+                        //Scrapper();
 
 
                         MySqlCommand cmd = new MySqlCommand("SELECT  e.establishmentname,e.city, e.pincode,e.address from establishmentdetails e  where e.cin = @cin", con);
