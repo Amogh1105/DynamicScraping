@@ -1,0 +1,128 @@
+﻿@model IEnumerable<ScrapingMVC.Models.CompanyDetails>
+@{
+    ViewBag.Title = "TotalItems";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+
+    <meta name="viewport" content="width=device-width" />
+    <title>Total Count</title>
+    <style>
+        #nav {
+            float: right;
+        }
+
+            #nav a {
+                color: black;
+                padding: 8px 16px;
+                text-decoration: none;
+                transition: background-color .3s;
+                border: 1px solid #ddd;
+            }
+
+                #nav a.active {
+                    background-color: #4CAF50;
+                    color: white;
+                    border: 1px solid #4CAF50;
+                }
+
+        #myTable tr {
+            display: none;
+        }
+    </style>
+    <script src="~/Scripts/bootstrap.min.js"></script>
+    <script src="~/Scripts/bootstrap.js"></script>
+    <script src="~/Scripts/jquery-1.10.2.js"></script>
+    <script src="~/Scripts/jquery-1.10.2.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="//cdn.datatables.net/1.10.10/css/jquery.dataTables.min.css">
+    <script type="text/javascript" language="javascript" src="//cdn.datatables.net/1.10.10/js/jquery.dataTables.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+  
+    <script type="text/javascript">
+
+        $(document).ready(function () {
+            $('#myTable').after('<div id="nav"></div>');
+            var rowsShown = 10;
+            var rowsTotal = $('#myTable tbody tr').length;
+            var numPages = rowsTotal / rowsShown;
+            for (i = 0; i < numPages; i++) {
+                var pageNum = i + 1;
+                $('#nav').append('<a href="#" rel="' + i + '">' + pageNum + '</a> ');
+            }
+            $('#myTable tbody tr').hide();
+            $('#myTable tbody tr').slice(0, rowsShown).show();
+            $('#nav a:first').addClass('active');
+            $('#nav a').bind('click', function (event) {
+
+                event.preventDefault();
+
+                $('#nav a').removeClass('active');
+                $(this).addClass('active');
+                var currPage = $(this).attr('rel');
+                var startItem = currPage * rowsShown;
+                var endItem = startItem + rowsShown;
+                $('#myTable tbody tr').css('opacity', '0.0').hide().slice(startItem, endItem).
+                css('display', 'table-row').animate({ opacity: 1 }, 300);
+            });
+            $("#myInput").on("keyup", function (e) {
+                e.preventDefault();
+                var value = $(this).val().toLowerCase();
+                $("#tbody tr").filter(function () {
+                    $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+                });
+            });
+        });
+
+
+    </script>
+</head>
+
+
+
+<body>
+    <div>
+        <h5>Total Company Count</h5>
+        <br/>
+        <br/>
+        <input id="myInput" type="text" placeholder="Search.." style="float:right">
+        <br><br>
+
+        <table class="table table-striped table-hover" id="myTable">
+            <tr>
+            <tr>
+                <th>
+                    @Html.DisplayNameFor(model => model.companyid)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.cin)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.companyname)
+                </th>
+
+
+            </tr>
+            <tbody id="tbody">
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td>@Html.DisplayFor(modelItem => item.companyid)</td>
+                        <td> @Html.DisplayFor(modelItem => item.cin)</td>
+                        <td>@Html.DisplayFor(modelItem => item.companyname)</td>
+
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <br />
+
+        <br />
+        @*@Html.ActionLink("Back", "CompanyPaymentDetails", "EPFO", new { style = "font-size:20px; color: blue" })*@
+    </div>
+</body>
+
+</html>

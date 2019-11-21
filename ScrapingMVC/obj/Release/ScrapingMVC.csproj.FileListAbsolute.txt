@@ -59,3 +59,10 @@ D:\DairymanGit\DynamicScraping\ScrapingMVC\bin\Microsoft.Owin.Security.Microsoft
 D:\DairymanGit\DynamicScraping\ScrapingMVC\obj\Release\ScrapingMVC.csprojResolveAssemblyReference.cache
 D:\DairymanGit\DynamicScraping\ScrapingMVC\obj\Release\ScrapingMVC.dll
 D:\DairymanGit\DynamicScraping\ScrapingMVC\obj\Release\ScrapingMVC.pdb
+D:\DairymanGit\DynamicScraping\ScrapingMVC\bin\x86\liblept1753.dll
+D:\DairymanGit\DynamicScraping\ScrapingMVC\bin\x86\libtesseract3052.dll
+D:\DairymanGit\DynamicScraping\ScrapingMVC\bin\x64\liblept1753.dll
+D:\DairymanGit\DynamicScraping\ScrapingMVC\bin\x64\libtesseract3052.dll
+D:\DairymanGit\DynamicScraping\ScrapingMVC\bin\IronOcr.dll
+D:\DairymanGit\DynamicScraping\ScrapingMVC\bin\Tesseract.dll
+D:\DairymanGit\DynamicScraping\ScrapingMVC\bin\IronOcr.xml

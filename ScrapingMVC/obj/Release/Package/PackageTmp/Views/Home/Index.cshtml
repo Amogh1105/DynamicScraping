@@ -14,40 +14,46 @@
 <head>
     <meta name="viewport" content="width=device-width" />
     <title>Company Master Data</title>
+
     <style>
-        input {
-            border-radius: .2em;
-            border: 1px solid #cccccc;
-            -webkit-transition: border linear .2s, box-shadow linear .2s;
-            -moz-transition: border linear .2s, box-shadow linear .2s;
-            -o-transition: border linear .2s, box-shadow linear .2s;
-            transition: border linear .2s, box-shadow linear .2s;
+    input {
+        border-radius: .2em;
+        border: 1px solid #cccccc;
+        -webkit-transition: border linear .2s, box-shadow linear .2s;
+        -moz-transition: border linear .2s, box-shadow linear .2s;
+        -o-transition: border linear .2s, box-shadow linear .2s;
+        transition: border linear .2s, box-shadow linear .2s;
+    }
+
+        input:focus {
+            border-color: rgba(82, 168, 236, 0.8);
+            outline: 0;
+            outline: thin dotted \9;
+            -webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,.075), 0 0 8px rgba(82,168,236,.6);
+            -moz-box-shadow: inset 0 1px 1px rgba(0,0,0,.075), 0 0 8px rgba(82,168,236,.6);
+            box-shadow: inset 0 1px 1px rgba(0,0,0,.075), 0 0 8px rgba(82,168,236,.6);
         }
 
-            input:focus {
-                border-color: rgba(82, 168, 236, 0.8);
-                outline: 0;
-                outline: thin dotted \9;
-                -webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,.075), 0 0 8px rgba(82,168,236,.6);
-                -moz-box-shadow: inset 0 1px 1px rgba(0,0,0,.075), 0 0 8px rgba(82,168,236,.6);
-                box-shadow: inset 0 1px 1px rgba(0,0,0,.075), 0 0 8px rgba(82,168,236,.6);
-            }
 
-        #loading {
+    /*#loading {
             position: fixed;
             width: 100%;
             height: 100vh;
             background: #fff url('~/images/Spinner.gif') no-repeat center center;
             z-index: 9999;
-        }
-
-    </style>
+        }*/
+</style>
     <script src="~/Scripts/bootstrap.js"></script>
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"
+            integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+            crossorigin="anonymous"></script>
     <script src="~/Scripts/bootstrap.min.js"></script>
     <script src="~/Scripts/jquery-1.10.2.intellisense.js"></script>
     <script src="~/Scripts/jquery-1.10.2.js"></script>
     <script src="~/Scripts/jquery-1.10.2.min.js"></script>
     <script src="~/Scripts/jquery.validate.js"></script>
+    <script src="~/Scripts/jquery.js"></script>
+    
     <script type="text/javascript">
         function uncheckCompany() {
             $('#companynames').removeProp('checked');
@@ -60,24 +66,86 @@
             $('#cins').removeProp('checked');
         }
 
-        jQuery(document).ready(function () {
-            jQuery('#loading').fadeOut(3000);
+        var showLoader = function (form) {
+
+            $("<div />").css({
+                'position': 'fixed',
+                'left': 0,
+                'right': 0,
+                'bottom': 0,
+                'top': 0,
+                'background': '#0020ff36',
+                'z-index': '99',
+                'text-align': 'center'
+            }).appendTo($("body"))
+              .append(
+                $("<img />").attr("src", "https://mir-s3-cdn-cf.behance.net/project_modules/disp/35771931234507.564a1d2403b3a.gif")
+            );
+
+
+        }
+
+
+        function checkradio() {
+            $radios = $('input[type="radio"]');
+            $radios.on('change', function () {
+                if ($(this).is(':checked')) {
+                    $radios.prop('required', false);
+                    $(this).prop('required', true);
+                }
+            });
+
+         
+        }
+        history.pushState(null, document.title, location.href);
+        window.addEventListener('popstate', function (event) {
+            history.pushState(null, document.title, location.href);
         });
 
-        //$('#myCheckbox').attr('checked', false); // Unchecks it
+        //(function (global) {
+
+        //    if (typeof (global) === "undefined") {
+        //        throw new Error("window is undefined");
+        //    }
+
+        //    var _hash = "!";
+        //    var noBackPlease = function () {
+        //        global.location.href += "#";
+
+        //        // making sure we have the fruit available for juice (^__^)
+        //        global.setTimeout(function () {
+        //            global.location.href += "!";
+        //        }, 50);
+        //    };
+
+        //    global.onhashchange = function () {
+        //        if (global.location.hash !== _hash) {
+        //            global.location.hash = _hash;
+        //        }
+        //    };
+
+        //    global.onload = function () {
+        //        noBackPlease();
+
+        //        // disables backspace on page except on input fields and textarea..
+        //        document.body.onkeydown = function (e) {
+        //            var elm = e.target.nodeName.toLowerCase();
+        //            if (e.which === 8 && (elm !== 'input' && elm !== 'textarea')) {
+        //                e.preventDefault();
+        //            }
+        //            // stopping event bubbling up the DOM tree..
+        //            e.stopPropagation();
+        //        };
+        //    }
+
+        //})(window);
 
     </script>
     
 </head>
 <body>
-
-    
-
-
     <div>
-        <div id="loading"></div>
-
-    @using (Html.BeginForm("Index", "Home", FormMethod.Post, new { id = "myform" }))
+    @using (Html.BeginForm("Index", "Home", FormMethod.Post, new { id = "myform", onsubmit = "showLoader(this);" }))
     {
 
 
@@ -86,14 +154,14 @@
                id="companynames"
                name="companynames"
                type="radio"
-               value="Company Name" onclick="uncheckCIN()" />
+               value="Company Name" required="required"  onclick="uncheckCIN()" />
 
          <b>    <label>CIN :</label>    </b>
         <input 
            id="cins"
            name="cins"
            type="radio"
-           value="CIN" onclick="uncheckCompany()" />
+           value="CIN"  onclick="uncheckCompany()" />
 
 
 
@@ -109,10 +177,10 @@
                 <br />
 
         
-      @Html.TextBox("CinNumber", "", new { style = "width:500px;", placeholder = "Enter CIN or Company Name", required = "required;" })     
+      @Html.TextBox("CinNumber", "", new { style = "width:500px;", placeholder = "Enter CIN or Company Name", required = "required;" })
 
-      
-        <input type="submit" value="Search" class="btn btn-primary"  />    
+
+    <input type="submit" value="Search" class="btn btn-primary" id="submit" onclick="checkradio();"  />
     }
 
       
