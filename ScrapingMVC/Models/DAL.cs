@@ -14,8 +14,8 @@ using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Support.UI;
 using System.Collections;
-
-
+using System.Drawing;
+using System.Web.UI;
 
 namespace ScrapingMVC.Models
 {
@@ -28,7 +28,13 @@ namespace ScrapingMVC.Models
             {
 
                 // Go to the home page
+                browser.Manage().Window.Maximize();
                 browser.Navigate().GoToUrl("https://www.zaubacorp.com/");
+
+                WebDriverWait wait = new WebDriverWait(browser, TimeSpan.FromSeconds(40));
+                wait.Until(d => d.FindElement(By.Id("searchid")));
+                System.Threading.Thread.Sleep(5000);
+
 
                 //PROXY
 
@@ -44,7 +50,7 @@ namespace ScrapingMVC.Models
                 {
 
 
-                    MySqlCommand cmd = new MySqlCommand("select * from uninsertedcompanies", con);
+                    MySqlCommand cmd = new MySqlCommand("select * from uninsertedcompanies order by uninsertedid desc", con);
                     cmd.CommandType = CommandType.Text;
                     con.Open();
                     List<CompanyDetails> customers = new List<CompanyDetails>();
@@ -85,7 +91,7 @@ namespace ScrapingMVC.Models
                             userNameField.SendKeys(jcompanyname);
                         }
                         System.Threading.Thread.Sleep(10000);
-                        browser.FindElementByXPath("//div[@id='result']//div[@class='show']").Click();
+                        browser.FindElementByXPath("//div[@id='result']//div[@class='show'][1]").Click();
 
                         //Name or CIN IS CLICKED IN BROWSER!!
 
@@ -98,11 +104,12 @@ namespace ScrapingMVC.Models
                         {
 
                             DateTime now = DateTime.Now;
+                            string datevalue = now.ToString("yyyy-MM-dd");
 
                             var headings = browser.FindElementsByXPath("//div[@class='col-lg-12 col-md-12 col-sm-12 col-xs-12'][last()-4]//tbody//tr//td");
                             var runtime = now;
 
-                            MySqlCommand cmd2 = new MySqlCommand("INSERT INTO companydetails(cin,companyname,companystatus,roc,registrationnumber,companycategory,companysubcategory,companyclass,dateofincorporation,ageofcompany,activity,numberofmembers,runtime) VALUES(@cin,@companyname,@companystatus,@roc,@registrationnumber,@companycategory,@companysubcategory,@companyclass,@dateofincorporation,@ageofcompany,@activity,@numberofmembers,@runtime)", con);
+                            MySqlCommand cmd2 = new MySqlCommand("INSERT INTO companydetails(cin,companyname,companystatus,roc,registrationnumber,companycategory,companysubcategory,companyclass,dateofincorporation,ageofcompany,activity,numberofmembers,runtime,datevalue) VALUES(@cin,@companyname,@companystatus,@roc,@registrationnumber,@companycategory,@companysubcategory,@companyclass,@dateofincorporation,@ageofcompany,@activity,@numberofmembers,@runtime, @datevalue)", con);
                             cmd2.CommandType = CommandType.Text;
                             cmd2.Parameters.AddWithValue("@cin", companycin);
                             cmd2.Parameters.AddWithValue("@companyname", headings[1].Text);
@@ -117,6 +124,8 @@ namespace ScrapingMVC.Models
                             cmd2.Parameters.AddWithValue("@activity", headings[19].Text);
                             cmd2.Parameters.AddWithValue("@numberofmembers", headings[21].Text);
                             cmd2.Parameters.AddWithValue("@runtime", now);
+                            cmd2.Parameters.AddWithValue("@datevalue", datevalue);
+
                             cmd2.ExecuteNonQuery();
 
 
@@ -130,13 +139,15 @@ namespace ScrapingMVC.Models
                             var pc = demo[3].Text;
                             var authorizedcapital = ac.Remove(0, 1);
                             var paidupcapital = pc.Remove(0, 1);
-                            MySqlCommand cmd3 = new MySqlCommand("INSERT INTO sharecapital (cin,companyname,authorizedcapital,paidupcapital,runtime)VALUES (@cin,@companyname,@authorizedcapital,@paidupcapital,@runtime)", con);
+                            MySqlCommand cmd3 = new MySqlCommand("INSERT INTO sharecapital (cin,companyname,authorizedcapital,paidupcapital,runtime,datevalue)VALUES (@cin,@companyname,@authorizedcapital,@paidupcapital,@runtime, @datevalue)", con);
                             cmd3.CommandType = CommandType.Text;
                             cmd3.Parameters.AddWithValue("@cin", companycin);
                             cmd3.Parameters.AddWithValue("@companyname", headings[1].Text);
                             cmd3.Parameters.AddWithValue("@authorizedcapital", authorizedcapital);
                             cmd3.Parameters.AddWithValue("@paidupcapital", paidupcapital);
                             cmd3.Parameters.AddWithValue("@runtime", now);
+                            cmd3.Parameters.AddWithValue("@datevalue", datevalue);
+
                             cmd3.ExecuteNonQuery();
 
                             //Now Share Capital Details are inserted leave 5s gap
@@ -150,7 +161,7 @@ namespace ScrapingMVC.Models
                             var demo1 = browser.FindElementsByXPath("//div[@class='col-lg-12 col-md-12 col-sm-12 col-xs-12'][position()=5]//tbody//tr//td");
 
                             var listingstatus = browser.FindElementByXPath("//div[@class='col-lg-12 col-md-12 col-sm-12 col-xs-12'][position()=5]//thead//tr//td[2]").Text;
-                            MySqlCommand cmd4 = new MySqlCommand("INSERT INTO annualcompliance (cin,companyname,listingstatus,dateoflastgeneralmeeting,dateoflastestbalancesheet,runtime)VALUES (@cin,@companyname,@listingstatus,@dateoflastgeneralmeeting,@dateoflastestbalancesheet,@runtime)", con);
+                            MySqlCommand cmd4 = new MySqlCommand("INSERT INTO annualcompliance (cin,companyname,listingstatus,dateoflastgeneralmeeting,dateoflastestbalancesheet,runtime,datevalue)VALUES (@cin,@companyname,@listingstatus,@dateoflastgeneralmeeting,@dateoflastestbalancesheet,@runtime,@datevalue)", con);
                             cmd4.CommandType = CommandType.Text;
                             cmd4.Parameters.AddWithValue("@cin", companycin);
                             cmd4.Parameters.AddWithValue("@companyname", headings[1].Text);
@@ -159,6 +170,8 @@ namespace ScrapingMVC.Models
 
                             cmd4.Parameters.AddWithValue("@dateoflastestbalancesheet", demo1[3].Text);
                             cmd4.Parameters.AddWithValue("@runtime", now);
+                            cmd4.Parameters.AddWithValue("@datevalue", datevalue);
+
                             cmd4.ExecuteNonQuery();
 
                             System.Threading.Thread.Sleep(5000);
@@ -169,7 +182,7 @@ namespace ScrapingMVC.Models
 
                             //DIRECTOR DETAILS START
 
-                                                                            
+
                             var directortable = browser.FindElementByXPath("//*[@id='block-system-main']/div[2]/div[1]/div[7]/table");
                             if (directortable.Displayed)
                             {
@@ -181,7 +194,7 @@ namespace ScrapingMVC.Models
                                 foreach (var elemTr in rowsr)
                                 {
                                     List<string> all = new List<string>();
-                                    
+
                                     List<IWebElement> lstTdElem = new List<IWebElement>(elemTr.FindElements(By.XPath("td[not(@width)]")));
                                     if (lstTdElem.Count > 0)
                                     {
@@ -189,12 +202,12 @@ namespace ScrapingMVC.Models
                                         foreach (var elemTd in lstTdElem)
                                         {
                                             // "\t\t" is used for Tab Space between two Text
-                                            strRowData = strRowData + elemTd.Text+ "\t\t";
+                                            strRowData = strRowData + elemTd.Text + "\t\t";
                                             all.Add(elemTd.Text);
-                                           
+
                                         }
 
-                                        MySqlCommand cmd5 = new MySqlCommand("INSERT  INTO directordetails (cin,companyname,din,directorname,designation,appointmentdate,link,runtime)VALUES (@cin,@companyname,@din,@directorname,@designation,@appointmentdate,@link,@runtime)", con);
+                                        MySqlCommand cmd5 = new MySqlCommand("INSERT  INTO directordetails (cin,companyname,din,directorname,designation,appointmentdate,link,runtime,datevalue)VALUES (@cin,@companyname,@din,@directorname,@designation,@appointmentdate,@link,@runtime,@datevalue)", con);
                                         cmd5.CommandType = CommandType.Text;
                                         cmd5.Parameters.AddWithValue("@cin", companycin);
                                         cmd5.Parameters.AddWithValue("@companyname", headings[1].Text);
@@ -205,12 +218,13 @@ namespace ScrapingMVC.Models
 
                                         cmd5.Parameters.AddWithValue("@link", all[4]);
                                         cmd5.Parameters.AddWithValue("@runtime", now);
+                                        cmd5.Parameters.AddWithValue("@datevalue", datevalue);
 
                                         cmd5.ExecuteNonQuery();
 
                                     }
 
-                              
+
 
                                 }
 
@@ -226,7 +240,7 @@ namespace ScrapingMVC.Models
 
                             var chargestable = browser.FindElementsByXPath("//table[@id='charges']");
                             var nofound = browser.FindElementByXPath("//table[@id='charges']//tbody//tr//td//p").Text;
-                            if (nofound!="No charges found")
+                            if (nofound != "No charges found")
                             {
                                 IReadOnlyCollection<IWebElement> rowsr = browser.FindElementsByXPath(("//table[@id='charges']//tbody//tr"));
                                 IReadOnlyCollection<IWebElement> colsc = browser.FindElementsByXPath(("//table[@id='charges']//thead//tr//td"));
@@ -249,7 +263,7 @@ namespace ScrapingMVC.Models
 
                                         }
 
-                                        MySqlCommand cmd6 = new MySqlCommand("INSERT  INTO chargesdetails (cin,companyname,chargeid,creationdate,modificationdate,closuredate,assetsundercharge,amount,chargeholder,runtime)VALUES (@cin,@companyname,@chargeid,@creationdate,@modificationdate,@closuredate,@assetsundercharge,@amount,@chargeholder,@runtime)", con);
+                                        MySqlCommand cmd6 = new MySqlCommand("INSERT  INTO chargesdetails (cin,companyname,chargeid,creationdate,modificationdate,closuredate,assetsundercharge,amount,chargeholder,runtime,datevalue)VALUES (@cin,@companyname,@chargeid,@creationdate,@modificationdate,@closuredate,@assetsundercharge,@amount,@chargeholder,@runtime,@datevalue)", con);
                                         cmd6.CommandType = CommandType.Text;
                                         cmd6.Parameters.AddWithValue("@cin", companycin);
                                         cmd6.Parameters.AddWithValue("@companyname", headings[1].Text);
@@ -261,6 +275,7 @@ namespace ScrapingMVC.Models
                                         cmd6.Parameters.AddWithValue("@amount", allvalues[5]);
                                         cmd6.Parameters.AddWithValue("@chargeholder", allvalues[6]);
                                         cmd6.Parameters.AddWithValue("@runtime", now);
+                                        cmd6.Parameters.AddWithValue("@datevalue", datevalue);
 
                                         cmd6.ExecuteNonQuery();
 
@@ -283,7 +298,7 @@ namespace ScrapingMVC.Models
                             IReadOnlyCollection<IWebElement> establishmentrows = browser.FindElementsByXPath(("//div[@class='col-12'][position()=3]//tbody//tr"));
                             var noestablishmentfound = browser.FindElementByXPath("//div[@class='col-12'][position()=3]//table//tbody//tr//td//p").Text;
 
-                            if (noestablishmentfound!="No establishments found")
+                            if (noestablishmentfound != "No establishments found")
                             {
                                 IReadOnlyCollection<IWebElement> rowsr = browser.FindElementsByXPath(("//div[@class='col-12'][position()=3]//tbody//tr"));
                                 IReadOnlyCollection<IWebElement> colsc = browser.FindElementsByXPath(("//div[@class='col-12'][position()=3]//table//thead//td"));
@@ -306,7 +321,7 @@ namespace ScrapingMVC.Models
 
                                         }
 
-                                        MySqlCommand cmd7 = new MySqlCommand("INSERT  INTO establishmentdetails (cin,companyname,establishmentname,city,pincode,address,runtime)VALUES (@cin,@companyname,@establishmentname,@city,@pincode,@address,@runtime)", con);
+                                        MySqlCommand cmd7 = new MySqlCommand("INSERT  INTO establishmentdetails (cin,companyname,establishmentname,city,pincode,address,runtime,datevalue)VALUES (@cin,@companyname,@establishmentname,@city,@pincode,@address,@runtime,@datevalue)", con);
                                         cmd7.CommandType = CommandType.Text;
                                         cmd7.Parameters.AddWithValue("@cin", companycin);
                                         cmd7.Parameters.AddWithValue("@companyname", headings[1].Text);
@@ -315,6 +330,7 @@ namespace ScrapingMVC.Models
                                         cmd7.Parameters.AddWithValue("@pincode", all[2]);
                                         cmd7.Parameters.AddWithValue("@address", all[3]);
                                         cmd7.Parameters.AddWithValue("@runtime", now);
+                                        cmd7.Parameters.AddWithValue("@datevalue", datevalue);
 
 
                                         cmd7.ExecuteNonQuery();
@@ -337,6 +353,11 @@ namespace ScrapingMVC.Models
                         {
                             // if title is null if table contains no data
                         }
+                        browser.Close();
+
+                        //browser.Quit();
+
+                        browser.Dispose();
 
                         //Delete the entry from uninserted table
 
@@ -344,17 +365,49 @@ namespace ScrapingMVC.Models
                         cmd8.CommandType = CommandType.Text;
                         cmd8.Parameters.AddWithValue("@uninsertedid", jpk);
                         cmd8.ExecuteNonQuery();
-                        
+
 
 
                     }
                 }
             }
         }
-       
+
+//        public void GenerateSnapshot(string filePath)
+//        {
+//            IWebDriver driver = new ChromeDriver();
+//            driver.Manage().Window.Maximize(); driver.Navigate().GoToUrl("https://unifiedportal-epfo.epfindia.gov.in/publicPortal/no-auth/misReport/home/loadEstSearchHome");
+//            System.Threading.Thread.Sleep(10000);
+
+//            var remElement = driver.FindElement(By.Id("capImg"));
+//            Point location = remElement.Location;
+
+//            var screenshot = (driver as ChromeDriver).GetScreenshot();
+//            using (MemoryStream stream = new MemoryStream(screenshot.AsByteArray))
+//            {
+//                using (Bitmap bitmap = new Bitmap(stream))
+//                {
+//                    RectangleF part = new RectangleF(location.X, location.Y, remElement.Size.Width, remElement.Size.Height);
+//                    using (Bitmap bn = bitmap.Clone(part, bitmap.PixelFormat))
+//                    {
+//                        bn.Save(filePath + "CaptchImage.png", System.Drawing.Imaging.ImageFormat.Png);
+//                    }
+//                }
+//            }
+//           //reading text from images
+//using (var engine = new TesseractEngine(“”, “eng”,         EngineMode.Default))
+//{
+
+//Page ocrPage = engine.Process(Pix.LoadFromFile(filePath + “CaptchImage.png”), PageSegMode.AutoOnly);
+//var captchatext = ocrPage.GetText();
+//}
+//            driver.Close();
+//            driver.Dispose();
+//        }
+
         public List<CompanyDetails> GetNewDetails(string CompanyName, CompanyDetails cd)
         {
-            
+
             string query = ConfigurationManager.ConnectionStrings["connString"].ConnectionString;
             using (MySqlConnection con = new MySqlConnection(query))
             {
@@ -371,7 +424,7 @@ namespace ScrapingMVC.Models
                     {
                         //CIN exist
 
-                        MySqlCommand cmd = new MySqlCommand("SELECT c.cin, c.companyname,c.companystatus,c.roc,c.registrationnumber,c.companycategory,c.companysubcategory,c.companyclass,c.dateofincorporation,c.ageofcompany,c.activity,c.numberofmembers from companydetails c  where c.cin = @cin", con);
+                        MySqlCommand cmd = new MySqlCommand("SELECT DISTINCT c.cin, c.companyname,c.companystatus,c.roc,c.registrationnumber,c.companycategory,c.companysubcategory,c.companyclass,c.dateofincorporation,c.ageofcompany,c.activity,c.numberofmembers from companydetails c  where c.cin = @cin", con);
                         cmd.CommandType = CommandType.Text;
                         cmd.Parameters.AddWithValue("@cin", CompanyName);
                         MySqlDataAdapter sd = new MySqlDataAdapter(cmd);
@@ -407,7 +460,7 @@ namespace ScrapingMVC.Models
                     else
                     {
                         //CIn doesn't exist.
-                        DateTime now = DateTime.Now;  
+                        DateTime now = DateTime.Now;
                         MySqlCommand myCommand = new MySqlCommand("Insert into uninsertedcompanies(companyname,cin,runtime) values(@companyname, @cin,@now)", con);
                         myCommand.Parameters.AddWithValue("@companyname", "");
                         myCommand.Parameters.AddWithValue("@cin", CompanyName);
@@ -433,7 +486,7 @@ namespace ScrapingMVC.Models
                         //if (isRunning == false)
                         //{
                         //    Process.Start(info);
-                            
+
 
                         //}
 
@@ -471,7 +524,7 @@ namespace ScrapingMVC.Models
                         //startinfo.Verb = "runas";
                         //startinfo.CreateNoWindow = false;
                         //startinfo.UseShellExecute = true;
-                       
+
 
                         //System.Diagnostics.Process.Start(@"D:\ConsoleBatchFile\ConsoleBatchFile\bin\Debug\ConsoleBatchFile.exe");
 
@@ -480,9 +533,9 @@ namespace ScrapingMVC.Models
                         //string Locat=ConfigurationManager.AppSettings["EXELOG"];
                         //startinfo.FileName = Locat + "ConsoleBatchFile.exe";
 
-//@"D:\ConsoleBatchFile\ConsoleBatchFile\bin\Debug\ConsoleBatchFile.exe";
-                            //Locat + "ConsoleBatchFile.exe";
-                            //@"D:\ConsoleBatchFile\ConsoleBatchFile\bin\Debug\ConsoleBatchFile.exe";
+                        //@"D:\ConsoleBatchFile\ConsoleBatchFile\bin\Debug\ConsoleBatchFile.exe";
+                        //Locat + "ConsoleBatchFile.exe";
+                        //@"D:\ConsoleBatchFile\ConsoleBatchFile\bin\Debug\ConsoleBatchFile.exe";
                         //startinfo.Verb = "runas";
                         //startinfo.CreateNoWindow = false;
                         //startinfo.UseShellExecute = true;
@@ -527,7 +580,7 @@ namespace ScrapingMVC.Models
 
                         //System.Diagnostics.Process.Start(@"D:\ConsoleBatchFile\ConsoleBatchFile\bin\Debug\ConsoleBatchFile.exe");
 
-                        
+
                         //Process p = new Process();
                         //p.StartInfo.FileName = @"C:\zauba";
                         //p.Start();
@@ -612,9 +665,9 @@ namespace ScrapingMVC.Models
                         //{
                         //    //If you are here the user clicked decline to grant admin privileges (or he's not administrator)
                         //}
-                        
-                        
-                        
+
+
+
                         //System.Diagnostics.Process.Start("cmd.exe", @"/c C:/Users/TRN-0270/zauba.bat");
 
 
@@ -691,7 +744,7 @@ namespace ScrapingMVC.Models
                         //ExecuteBatchFile("D:/ScrapyMVC/ScrapyMVC/scrapy/zauba.bat",1000,false);
 
 
-                        MySqlCommand cmd = new MySqlCommand("SELECT c.cin, c.companyname,c.companystatus,c.roc,c.registrationnumber,c.companycategory,c.companysubcategory,c.companyclass,c.dateofincorporation,c.ageofcompany,c.activity,c.numberofmembers from companydetails c  where c.cin = @cin", con);
+                        MySqlCommand cmd = new MySqlCommand("SELECT DISTINCT c.cin, c.companyname,c.companystatus,c.roc,c.registrationnumber,c.companycategory,c.companysubcategory,c.companyclass,c.dateofincorporation,c.ageofcompany,c.activity,c.numberofmembers from companydetails c  where c.cin = @cin", con);
                         cmd.CommandType = CommandType.Text;
                         cmd.Parameters.AddWithValue("@cin", CompanyName);
                         MySqlDataAdapter sd = new MySqlDataAdapter(cmd);
@@ -738,7 +791,7 @@ namespace ScrapingMVC.Models
                     {
                         //Company exist
 
-                        MySqlCommand cmd = new MySqlCommand("SELECT c.cin, c.companyname,c.companystatus,c.roc,c.registrationnumber,c.companycategory,c.companysubcategory,c.companyclass,c.dateofincorporation,c.ageofcompany,c.activity,c.numberofmembers from companydetails c  where c.companyname = @companyname", con);
+                        MySqlCommand cmd = new MySqlCommand("SELECT DISTINCT c.cin, c.companyname,c.companystatus,c.roc,c.registrationnumber,c.companycategory,c.companysubcategory,c.companyclass,c.dateofincorporation,c.ageofcompany,c.activity,c.numberofmembers from companydetails c  where c.companyname = @companyname", con);
                         cmd.CommandType = CommandType.Text;
                         cmd.Parameters.AddWithValue("@companyname", CompanyName);
                         MySqlDataAdapter sd = new MySqlDataAdapter(cmd);
@@ -774,7 +827,7 @@ namespace ScrapingMVC.Models
                     else
                     {
                         //Company doesn't exist.
-                        DateTime now = DateTime.Now;  
+                        DateTime now = DateTime.Now;
 
                         MySqlCommand myCommand = new MySqlCommand("Insert into uninsertedcompanies(companyname,cin,runtime) values(@companyname, @cin, @runtime)", con);
                         myCommand.Parameters.AddWithValue("@companyname", CompanyName);
@@ -786,7 +839,7 @@ namespace ScrapingMVC.Models
 
                         Scrapper();
 
-                        MySqlCommand cmd = new MySqlCommand("SELECT c.cin, c.companyname,c.companystatus,c.roc,c.registrationnumber,c.companycategory,c.companysubcategory,c.companyclass,c.dateofincorporation,c.ageofcompany,c.activity,c.numberofmembers from companydetails c  where c.companyname = @companyname", con);
+                        MySqlCommand cmd = new MySqlCommand("SELECT  DISTINCT c.cin, c.companyname,c.companystatus,c.roc,c.registrationnumber,c.companycategory,c.companysubcategory,c.companyclass,c.dateofincorporation,c.ageofcompany,c.activity,c.numberofmembers from companydetails c  where c.companyname = @companyname", con);
                         cmd.CommandType = CommandType.Text;
                         cmd.Parameters.AddWithValue("@companyname", CompanyName);
                         MySqlDataAdapter sd = new MySqlDataAdapter(cmd);
@@ -853,7 +906,7 @@ namespace ScrapingMVC.Models
                     {
                         //CIN exist
 
-                        MySqlCommand cmd = new MySqlCommand("SELECT  s.authorizedcapital,s.paidupcapital from sharecapital s  where s.cin = @cin", con);
+                        MySqlCommand cmd = new MySqlCommand("SELECT DISTINCT  s.authorizedcapital,s.paidupcapital from sharecapital s  where s.cin = @cin", con);
                         cmd.CommandType = CommandType.Text;
                         cmd.Parameters.AddWithValue("@cin", CompanyName);
                         MySqlDataAdapter sd = new MySqlDataAdapter(cmd);
@@ -866,7 +919,7 @@ namespace ScrapingMVC.Models
                                 {
                                     authorizedcapital = dr["authorizedcapital"].ToString(),
                                     paidupcapital = dr["paidupcapital"].ToString()
-                                  
+
 
                                 });
                         }
@@ -943,7 +996,7 @@ namespace ScrapingMVC.Models
                         //ExecuteBatchFile("D:/ScrapyMVC/ScrapyMVC/scrapy/zauba.bat",1000,false);
 
 
-                        MySqlCommand cmd = new MySqlCommand("select s.authorizedcapital,s.paidupcapital from sharecapital s  where s.cin = @cin", con);
+                        MySqlCommand cmd = new MySqlCommand("select DISTINCT s.authorizedcapital,s.paidupcapital from sharecapital s  where s.cin = @cin", con);
                         cmd.CommandType = CommandType.Text;
                         cmd.Parameters.AddWithValue("@cin", CompanyName);
                         MySqlDataAdapter sd = new MySqlDataAdapter(cmd);
@@ -980,7 +1033,7 @@ namespace ScrapingMVC.Models
                     {
                         //Company exist
 
-                        MySqlCommand cmd = new MySqlCommand("SELECT  s.authorizedcapital,s.paidupcapital from sharecapital s  where s.companyname = @companyname", con);
+                        MySqlCommand cmd = new MySqlCommand("SELECT DISTINCT  s.authorizedcapital,s.paidupcapital from sharecapital s  where s.companyname = @companyname", con);
                         cmd.CommandType = CommandType.Text;
                         cmd.Parameters.AddWithValue("@companyname", CompanyName);
                         MySqlDataAdapter sd = new MySqlDataAdapter(cmd);
@@ -1021,7 +1074,7 @@ namespace ScrapingMVC.Models
 
                         //Scrapper();
 
-                        MySqlCommand cmd = new MySqlCommand("SELECT  s.authorizedcapital,s.paidupcapital from sharecapital s  where s.companyname = @companyname", con);
+                        MySqlCommand cmd = new MySqlCommand("SELECT DISTINCT  s.authorizedcapital,s.paidupcapital from sharecapital s  where s.companyname = @companyname", con);
                         cmd.CommandType = CommandType.Text;
                         cmd.Parameters.AddWithValue("@companyname", CompanyName);
                         MySqlDataAdapter sd = new MySqlDataAdapter(cmd);
@@ -1074,7 +1127,7 @@ namespace ScrapingMVC.Models
                     {
                         //CIN exist
 
-                        MySqlCommand cmd = new MySqlCommand("SELECT  a.listingstatus,a.dateoflastgeneralmeeting,a.dateoflastestbalancesheet from annualcompliance a  where a.cin = @cin", con);
+                        MySqlCommand cmd = new MySqlCommand("SELECT DISTINCT  a.listingstatus,a.dateoflastgeneralmeeting,a.dateoflastestbalancesheet from annualcompliance a  where a.cin = @cin", con);
                         cmd.CommandType = CommandType.Text;
                         cmd.Parameters.AddWithValue("@cin", CompanyName);
                         MySqlDataAdapter sd = new MySqlDataAdapter(cmd);
@@ -1165,7 +1218,7 @@ namespace ScrapingMVC.Models
                         //ExecuteBatchFile("D:/ScrapyMVC/ScrapyMVC/scrapy/zauba.bat",1000,false);
 
 
-                        MySqlCommand cmd = new MySqlCommand("SELECT  a.listingstatus,a.dateoflastgeneralmeeting,a.dateoflastestbalancesheet from annualcompliance a  where a.cin = @cin", con);
+                        MySqlCommand cmd = new MySqlCommand("SELECT DISTINCT a.listingstatus,a.dateoflastgeneralmeeting,a.dateoflastestbalancesheet from annualcompliance a  where a.cin = @cin", con);
                         cmd.CommandType = CommandType.Text;
                         cmd.Parameters.AddWithValue("@cin", CompanyName);
                         MySqlDataAdapter sd = new MySqlDataAdapter(cmd);
@@ -1202,7 +1255,7 @@ namespace ScrapingMVC.Models
                     {
                         //Company exist
 
-                        MySqlCommand cmd = new MySqlCommand("SELECT  a.listingstatus,a.dateoflastgeneralmeeting,a.dateoflastestbalancesheet from annualcompliance a  where a.companyname = @companyname", con);
+                        MySqlCommand cmd = new MySqlCommand("SELECT DISTINCT  a.listingstatus,a.dateoflastgeneralmeeting,a.dateoflastestbalancesheet from annualcompliance a  where a.companyname = @companyname", con);
                         cmd.CommandType = CommandType.Text;
                         cmd.Parameters.AddWithValue("@companyname", CompanyName);
                         MySqlDataAdapter sd = new MySqlDataAdapter(cmd);
@@ -1244,7 +1297,7 @@ namespace ScrapingMVC.Models
 
 
 
-                        MySqlCommand cmd = new MySqlCommand("SELECT  a.listingstatus,a.dateoflastgeneralmeeting,a.dateoflastestbalancesheet from annualcompliance a  where a.companyname = @companyname", con);
+                        MySqlCommand cmd = new MySqlCommand("SELECT DISTINCT  a.listingstatus,a.dateoflastgeneralmeeting,a.dateoflastestbalancesheet from annualcompliance a  where a.companyname = @companyname", con);
                         cmd.CommandType = CommandType.Text;
                         cmd.Parameters.AddWithValue("@companyname", CompanyName);
                         MySqlDataAdapter sd = new MySqlDataAdapter(cmd);
@@ -1299,7 +1352,7 @@ namespace ScrapingMVC.Models
                     {
                         //CIN exist
 
-                        MySqlCommand cmd = new MySqlCommand("SELECT d.din,d.directorname,d.designation,d.appointmentdate from directordetails d  where d.cin = @cin", con);
+                        MySqlCommand cmd = new MySqlCommand("SELECT DISTINCT d.din,d.directorname,d.designation,d.appointmentdate from directordetails d  where d.cin = @cin", con);
                         cmd.CommandType = CommandType.Text;
                         cmd.Parameters.AddWithValue("@cin", CompanyName);
                         MySqlDataAdapter sd = new MySqlDataAdapter(cmd);
@@ -1335,8 +1388,8 @@ namespace ScrapingMVC.Models
                         //EXECUTE BAT
                         //Scrapper();
 
-                 
-                        MySqlCommand cmd = new MySqlCommand("SELECT  d.din,d.directorname,d.designation,d.appointmentdate from directordetails d  where d.cin = @cin", con);
+
+                        MySqlCommand cmd = new MySqlCommand("SELECT DISTINCT  d.din,d.directorname,d.designation,d.appointmentdate from directordetails d  where d.cin = @cin", con);
                         cmd.CommandType = CommandType.Text;
                         cmd.Parameters.AddWithValue("@cin", CompanyName);
                         MySqlDataAdapter sd = new MySqlDataAdapter(cmd);
@@ -1375,7 +1428,7 @@ namespace ScrapingMVC.Models
                     {
                         //Company exist
 
-                        MySqlCommand cmd = new MySqlCommand("SELECT  d.din,d.directorname,d.designation,d.appointmentdate from directordetails d  where d.companyname = @companyname", con);
+                        MySqlCommand cmd = new MySqlCommand("SELECT DISTINCT  d.din,d.directorname,d.designation,d.appointmentdate from directordetails d  where d.companyname = @companyname", con);
                         cmd.CommandType = CommandType.Text;
                         cmd.Parameters.AddWithValue("@companyname", CompanyName);
                         MySqlDataAdapter sd = new MySqlDataAdapter(cmd);
@@ -1418,7 +1471,7 @@ namespace ScrapingMVC.Models
 
 
 
-                        MySqlCommand cmd = new MySqlCommand("SELECT  d.din,d.directorname,d.designation,d.appointmentdate from directordetails d  where d.companyname = @companyname", con);
+                        MySqlCommand cmd = new MySqlCommand("SELECT DISTINCT  d.din,d.directorname,d.designation,d.appointmentdate from directordetails d  where d.companyname = @companyname", con);
                         cmd.CommandType = CommandType.Text;
                         cmd.Parameters.AddWithValue("@companyname", CompanyName);
                         MySqlDataAdapter sd = new MySqlDataAdapter(cmd);
@@ -1474,7 +1527,7 @@ namespace ScrapingMVC.Models
                     {
                         //CIN exist
 
-                        MySqlCommand cmd = new MySqlCommand("SELECT c.chargeid,c.creationdate,c.modificationdate,c.closuredate,c.assetsundercharge,c.amount,c.chargeholder from chargesdetails c where c.cin = @cin", con);
+                        MySqlCommand cmd = new MySqlCommand("SELECT DISTINCT c.chargeid,c.creationdate,c.modificationdate,c.closuredate,c.assetsundercharge,c.amount,c.chargeholder from chargesdetails c where c.cin = @cin", con);
                         cmd.CommandType = CommandType.Text;
                         cmd.Parameters.AddWithValue("@cin", CompanyName);
                         MySqlDataAdapter sd = new MySqlDataAdapter(cmd);
@@ -1513,7 +1566,7 @@ namespace ScrapingMVC.Models
                         //EXECUTE BAT
                         //Scrapper();
 
-                        MySqlCommand cmd = new MySqlCommand("SELECT c.chargeid,c.creationdate,c.modificationdate,c.closuredate,c.assetsundercharge,c.amount,c.chargeholder from chargesdetails c where c.cin = @cin", con);
+                        MySqlCommand cmd = new MySqlCommand("SELECT DISTINCT c.chargeid,c.creationdate,c.modificationdate,c.closuredate,c.assetsundercharge,c.amount,c.chargeholder from chargesdetails c where c.cin = @cin", con);
                         cmd.CommandType = CommandType.Text;
                         cmd.Parameters.AddWithValue("@cin", CompanyName);
                         MySqlDataAdapter sd = new MySqlDataAdapter(cmd);
@@ -1556,7 +1609,7 @@ namespace ScrapingMVC.Models
                     {
                         //Company exist
 
-                        MySqlCommand cmd = new MySqlCommand("SELECT c.chargeid,c.creationdate,c.modificationdate,c.closuredate,c.assetsundercharge,c.amount,c.chargeholder from chargesdetails c where c.companyname = @companyname", con);
+                        MySqlCommand cmd = new MySqlCommand("SELECT DISTINCT c.chargeid,c.creationdate,c.modificationdate,c.closuredate,c.assetsundercharge,c.amount,c.chargeholder from chargesdetails c where c.companyname = @companyname", con);
                         cmd.CommandType = CommandType.Text;
                         cmd.Parameters.AddWithValue("@companyname", CompanyName);
                         MySqlDataAdapter sd = new MySqlDataAdapter(cmd);
@@ -1603,7 +1656,7 @@ namespace ScrapingMVC.Models
 
 
 
-                        MySqlCommand cmd = new MySqlCommand("SELECT c.chargeid,c.creationdate,c.modificationdate,c.closuredate,c.assetsundercharge,c.amount,c.chargeholder from chargesdetails c where c.companyname = @companyname", con);
+                        MySqlCommand cmd = new MySqlCommand("SELECT DISTINCT c.chargeid,c.creationdate,c.modificationdate,c.closuredate,c.assetsundercharge,c.amount,c.chargeholder from chargesdetails c where c.companyname = @companyname", con);
                         cmd.CommandType = CommandType.Text;
                         cmd.Parameters.AddWithValue("@companyname", CompanyName);
                         MySqlDataAdapter sd = new MySqlDataAdapter(cmd);
@@ -1664,7 +1717,7 @@ namespace ScrapingMVC.Models
                     {
                         //CIN exist
 
-                        MySqlCommand cmd = new MySqlCommand("SELECT  e.establishmentname,e.city, e.pincode,e.address from establishmentdetails e  where e.cin = @cin", con);
+                        MySqlCommand cmd = new MySqlCommand("SELECT DISTINCT  e.establishmentname,e.city, e.pincode,e.address from establishmentdetails e  where e.cin = @cin", con);
                         cmd.CommandType = CommandType.Text;
                         cmd.Parameters.AddWithValue("@cin", CompanyName);
                         MySqlDataAdapter sd = new MySqlDataAdapter(cmd);
@@ -1701,7 +1754,7 @@ namespace ScrapingMVC.Models
                         //Scrapper();
 
 
-                        MySqlCommand cmd = new MySqlCommand("SELECT  e.establishmentname,e.city, e.pincode,e.address from establishmentdetails e  where e.cin = @cin", con);
+                        MySqlCommand cmd = new MySqlCommand("SELECT DISTINCT  e.establishmentname,e.city, e.pincode,e.address from establishmentdetails e  where e.cin = @cin", con);
                         cmd.CommandType = CommandType.Text;
                         cmd.Parameters.AddWithValue("@cin", CompanyName);
                         MySqlDataAdapter sd = new MySqlDataAdapter(cmd);
@@ -1740,7 +1793,7 @@ namespace ScrapingMVC.Models
                     {
                         //Company exist
 
-                        MySqlCommand cmd = new MySqlCommand("SELECT  e.establishmentname,e.city, e.pincode,e.address from establishmentdetails e  where e.companyname = @companyname", con);
+                        MySqlCommand cmd = new MySqlCommand("SELECT DISTINCT  e.establishmentname,e.city, e.pincode,e.address from establishmentdetails e  where e.companyname = @companyname", con);
                         cmd.CommandType = CommandType.Text;
                         cmd.Parameters.AddWithValue("@companyname", CompanyName);
                         MySqlDataAdapter sd = new MySqlDataAdapter(cmd);
@@ -1784,7 +1837,7 @@ namespace ScrapingMVC.Models
 
                         //Scrapper();
 
-                        MySqlCommand cmd = new MySqlCommand("SELECT  e.establishmentname,e.city, e.pincode,e.address from establishmentdetails e  where e.companyname = @companyname", con);
+                        MySqlCommand cmd = new MySqlCommand("SELECT  DISTINCT e.establishmentname,e.city, e.pincode,e.address from establishmentdetails e  where e.companyname = @companyname", con);
                         cmd.CommandType = CommandType.Text;
                         cmd.Parameters.AddWithValue("@companyname", CompanyName);
                         MySqlDataAdapter sd = new MySqlDataAdapter(cmd);
@@ -1815,6 +1868,92 @@ namespace ScrapingMVC.Models
                 }
                 return customers;
 
+            }
+
+        }
+
+        //Based on Date Value given
+
+        public List<CompanyDetails> GetStatistics(string datevalue)
+        {
+            string query = ConfigurationManager.ConnectionStrings["connString"].ConnectionString;
+            using (MySqlConnection con = new MySqlConnection(query))
+            {
+                MySqlCommand cmd = new MySqlCommand("Select DISTINCT c.cin, c.companyname from companydetails c where c.datevalue= @datevalue", con);
+                cmd.CommandType = CommandType.Text;
+                cmd.Parameters.AddWithValue("@datevalue", datevalue);
+                con.Open();
+                List<CompanyDetails> customers = new List<CompanyDetails>();
+                MySqlDataAdapter sd = new MySqlDataAdapter(cmd);
+                DataTable dt = new DataTable();
+                sd.Fill(dt);
+                foreach (DataRow dr in dt.Rows)
+                {
+                    customers.Add(new CompanyDetails
+                    {
+                        cin = dr["cin"].ToString(),
+                        companyname = dr["companyname"].ToString()
+
+                    });
+                }
+                return customers;
+            }
+
+        }
+
+
+        //This is the DASHBOARD COMPANY AND CIN COUNT
+        public List<string> GetValues()
+        {
+            List<string> values = new List<string>();
+            string query = ConfigurationManager.ConnectionStrings["connString"].ConnectionString;
+            //Db com = new Db();
+            //string connection = com.CheckForRightConnection();
+            using (MySqlConnection con = new MySqlConnection(query))
+            {
+                List<CompanyDetails> customers = new List<CompanyDetails>();
+                //newchange
+                MySqlCommand cmd = new MySqlCommand("select (select count(c.cin) from companydetails c) as CountA,(select count(c.companyname) as countB from companydetails c) as CountB", con);
+                //select count(a.no) from login a where a.IsActive=1 and a.Roles='user'
+                //
+                cmd.CommandType = CommandType.Text;
+                MySqlDataAdapter sd = new MySqlDataAdapter(cmd);
+                DataTable dt = new DataTable();
+                con.Open();
+                sd.Fill(dt);
+                values.Add(Convert.ToString(dt.Rows[0].ItemArray[0]));
+                values.Add(Convert.ToString(dt.Rows[0].ItemArray[1]));
+
+
+            }
+            return values;
+
+        }
+
+        //THIS IS TO DISPLAY THE TOTAL COMPANY AND CINS THAT EXISTS
+        public List<CompanyDetails> GetTotalCompanyCINCount()
+        {
+            string query = ConfigurationManager.ConnectionStrings["connString"].ConnectionString;
+            using (MySqlConnection con = new MySqlConnection(query))
+            {
+                MySqlCommand cmd = new MySqlCommand("Select DISTINCT c.companyid, c.cin, c.companyname from companydetails c", con);
+                cmd.CommandType = CommandType.Text;
+                List<CompanyDetails> customers = new List<CompanyDetails>();
+                MySqlDataAdapter da = new MySqlDataAdapter(cmd);
+                DataTable dt = new DataTable();
+                da.Fill(dt);
+                foreach (DataRow dr in dt.Rows)
+                {
+                    customers.Add(new CompanyDetails
+                    {
+                        companyid = Convert.ToInt16(dr["companyid"].ToString()),
+                        cin = dr["cin"].ToString(),
+                        companyname = dr["companyname"].ToString()
+
+
+                    });
+                }
+                return customers;
             }
 
         }

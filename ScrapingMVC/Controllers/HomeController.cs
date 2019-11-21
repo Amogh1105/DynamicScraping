@@ -61,16 +61,52 @@ namespace ScrapingMVC.Controllers
         public ActionResult Dashboard()
         {
             BreadCrumb = "Admin/Dashboard";
-
+            ModelState.Clear();
+            List<string> model = new List<string>();
+            model = dal.GetValues();
+            ViewBag.CinCount = model[0];
+            ViewBag.CompanyCount = model[1];
+           
             return View();
         }
 
-        public ActionResult Contact()
+        public JsonResult DrawReportsOnDashBoard(string datevalue)
         {
+            // return null;
+                
+                var results = dal.GetStatistics(datevalue);
+                var jsonResult = Json(results, JsonRequestBehavior.AllowGet);
+                jsonResult.MaxJsonLength = int.MaxValue;
+                return jsonResult;
+            
+           
+                // return RedirectToAction("Error", "Home");
+                //return Json(new
+                //{
+                //    redirectUrl = Url.Action("Error", "Home"),
+                //    isRedirect = true
+                //});
+            }
+        
 
-            return View();
+
+        //public ActionResult EPFO()
+        //{
+        //    var folderRootPath = HttpContext.Server.MapPath("~/images/");
+
+        //    string imagepath = "D:\\DairymanGit\\DynamicScraping\\ScrapingMVC\\images\\";
+        //    dal.GenerateSnapshot(folderRootPath);
+        //    return View();
+        //}
+        
+        [ScrapingMVC.MvcApplication.NoDirectAccess]
+        public ActionResult TotalItems()
+        {
+            BreadCrumb = "Admin/AllItems";
+            CompanyDetails cd = new CompanyDetails();
+            cd.customers = dal.GetTotalCompanyCINCount();
+            return View(cd.customers);
         }
-
         public string BreadCrumb { set { @ViewBag.BreadCrumb = value; } }
 
     }
