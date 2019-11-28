@@ -56,7 +56,7 @@ namespace ScrapingMVC.Models
         public string companynames { get; set; }
 
     
-        //capital
+        // share capital details
         [DisplayName("Authorized Capital")]
         public string authorizedcapital { get; set; }
 
@@ -64,7 +64,7 @@ namespace ScrapingMVC.Models
          public string paidupcapital { get; set; }
 
 
-        //annual
+        //annual details
 
         [DisplayName("Listing Status")]
          public string listingstatus { get; set; }
@@ -88,11 +88,12 @@ namespace ScrapingMVC.Models
 
         public List<CompanyDetails> customers5 { get; set; }
 
+        public List<CompanyDetails> customers6 { get; set; }
 
 
 
 
-        //establishment
+        //establishment details
 
         [DisplayName("Establishment Name")]
 
@@ -112,7 +113,7 @@ namespace ScrapingMVC.Models
        [DisplayName("DIN")]
 
 
-        //director
+        //director details
 
        public string din { get; set; }
        [DisplayName("Director Name")]
@@ -129,7 +130,8 @@ namespace ScrapingMVC.Models
        public string appointmentdate { get; set; }
 
 
-        //Charges
+
+        //Charges Details
        [DisplayName("Charge Id")]
 
        public string chargeid { get; set; }
@@ -148,6 +150,20 @@ namespace ScrapingMVC.Models
        public string amount { get; set; }
        [DisplayName("Charge Holder")]
        public string chargeholder { get; set; }
+
+        [DisplayName("SRN")]
+       public string srn { get; set; }
+       [DisplayName("EForm Name")]
+
+        public string eformname { get; set; }
+       [DisplayName("Event Date")]
+
+
+       public string eventdate { get; set; }
+       [DisplayName("ChallanCopy")]
+
+
+       public string challancopy { get; set; }
 
 
        public int primarykey { get; set; }

@@ -133,7 +133,7 @@ by editing this MSBuild file. In order to learn more about this please visit htt
       <publishTime>11/09/2019 18:03:47</publishTime>
     </File>
     <File Include="bin/ScrapingMVC.dll">
-      <publishTime>11/21/2019 17:50:58</publishTime>
+      <publishTime>11/26/2019 11:57:38</publishTime>
     </File>
     <File Include="bin/Selenium.WebDriverBackedSelenium.dll">
       <publishTime>11/13/2019 13:02:17</publishTime>
@@ -295,7 +295,7 @@ by editing this MSBuild file. In order to learn more about this please visit htt
       <publishTime>11/08/2018 11:16:19</publishTime>
     </File>
     <File Include="packages.config">
-      <publishTime>11/13/2019 16:27:45</publishTime>
+      <publishTime>11/26/2019 11:34:19</publishTime>
     </File>
     <File Include="Scripts/bootstrap.js">
       <publishTime>11/09/2019 18:03:10</publishTime>
@@ -344,6 +344,33 @@ by editing this MSBuild file. In order to learn more about this please visit htt
     </File>
     <File Include="Scripts/_references.js">
       <publishTime>11/21/2019 17:50:34</publishTime>
+    </File>
+    <File Include="tesseract-ocr/tessdata/eng.cube.bigrams">
+      <publishTime>10/17/2012 20:25:39</publishTime>
+    </File>
+    <File Include="tesseract-ocr/tessdata/eng.cube.fold">
+      <publishTime>10/17/2012 20:25:39</publishTime>
+    </File>
+    <File Include="tesseract-ocr/tessdata/eng.cube.lm">
+      <publishTime>10/17/2012 20:25:39</publishTime>
+    </File>
+    <File Include="tesseract-ocr/tessdata/eng.cube.nn">
+      <publishTime>10/17/2012 20:25:39</publishTime>
+    </File>
+    <File Include="tesseract-ocr/tessdata/eng.cube.params">
+      <publishTime>10/17/2012 20:25:39</publishTime>
+    </File>
+    <File Include="tesseract-ocr/tessdata/eng.cube.size">
+      <publishTime>10/17/2012 20:25:39</publishTime>
+    </File>
+    <File Include="tesseract-ocr/tessdata/eng.cube.word-freq">
+      <publishTime>10/17/2012 20:25:39</publishTime>
+    </File>
+    <File Include="tesseract-ocr/tessdata/eng.tesseract_cube.nn">
+      <publishTime>10/17/2012 20:25:39</publishTime>
+    </File>
+    <File Include="tesseract-ocr/tessdata/eng.traineddata">
+      <publishTime>10/17/2012 20:25:39</publishTime>
     </File>
     <File Include="vendors/animate.css/.bower.json">
       <publishTime>11/08/2018 11:16:19</publishTime>
@@ -8272,7 +8299,7 @@ by editing this MSBuild file. In order to learn more about this please visit htt
       <publishTime>11/19/2019 18:23:15</publishTime>
     </File>
     <File Include="Views/Home/Result.cshtml">
-      <publishTime>11/18/2019 14:41:23</publishTime>
+      <publishTime>11/22/2019 18:42:21</publishTime>
     </File>
     <File Include="Views/Home/TotalItems.cshtml">
       <publishTime>11/21/2019 11:54:59</publishTime>
@@ -8281,7 +8308,7 @@ by editing this MSBuild file. In order to learn more about this please visit htt
       <publishTime>11/09/2019 18:03:38</publishTime>
     </File>
     <File Include="Views/Shared/_Layout.cshtml">
-      <publishTime>11/21/2019 17:27:56</publishTime>
+      <publishTime>11/26/2019 11:56:05</publishTime>
     </File>
     <File Include="Views/Shared/_LoginPartial.cshtml">
       <publishTime>11/09/2019 18:03:38</publishTime>
@@ -8293,7 +8320,7 @@ by editing this MSBuild file. In order to learn more about this please visit htt
       <publishTime>11/09/2019 18:02:49</publishTime>
     </File>
     <File Include="Web.config">
-      <publishTime>11/21/2019 17:49:37</publishTime>
+      <publishTime>11/26/2019 11:57:41</publishTime>
     </File>
   </ItemGroup>
 </Project>

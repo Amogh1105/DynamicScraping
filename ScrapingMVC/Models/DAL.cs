@@ -16,6 +16,7 @@ using OpenQA.Selenium.Support.UI;
 using System.Collections;
 using System.Drawing;
 using System.Web.UI;
+using Tesseract;
 
 namespace ScrapingMVC.Models
 {
@@ -373,38 +374,367 @@ namespace ScrapingMVC.Models
             }
         }
 
-//        public void GenerateSnapshot(string filePath)
-//        {
-//            IWebDriver driver = new ChromeDriver();
-//            driver.Manage().Window.Maximize(); driver.Navigate().GoToUrl("https://unifiedportal-epfo.epfindia.gov.in/publicPortal/no-auth/misReport/home/loadEstSearchHome");
-//            System.Threading.Thread.Sleep(10000);
 
-//            var remElement = driver.FindElement(By.Id("capImg"));
-//            Point location = remElement.Location;
+        public Bitmap Resize(Bitmap bmp, int newWidth, int newHeight)
+        {
+            Bitmap temp = (Bitmap)bmp;
+            Bitmap bmap = new Bitmap(newWidth, newHeight, temp.PixelFormat);
 
-//            var screenshot = (driver as ChromeDriver).GetScreenshot();
-//            using (MemoryStream stream = new MemoryStream(screenshot.AsByteArray))
-//            {
-//                using (Bitmap bitmap = new Bitmap(stream))
-//                {
-//                    RectangleF part = new RectangleF(location.X, location.Y, remElement.Size.Width, remElement.Size.Height);
-//                    using (Bitmap bn = bitmap.Clone(part, bitmap.PixelFormat))
-//                    {
-//                        bn.Save(filePath + "CaptchImage.png", System.Drawing.Imaging.ImageFormat.Png);
-//                    }
-//                }
-//            }
-//           //reading text from images
-//using (var engine = new TesseractEngine(“”, “eng”,         EngineMode.Default))
-//{
+            double nWidthFactor = (double)temp.Width / (double)newWidth;
+            double nHeightFactor = (double)temp.Height / (double)newHeight;
 
-//Page ocrPage = engine.Process(Pix.LoadFromFile(filePath + “CaptchImage.png”), PageSegMode.AutoOnly);
-//var captchatext = ocrPage.GetText();
-//}
-//            driver.Close();
-//            driver.Dispose();
-//        }
+            double fx, fy, nx, ny;
+            int cx, cy, fr_x, fr_y;
+            Color color1 = new Color();
+            Color color2 = new Color();
+            Color color3 = new Color();
+            Color color4 = new Color();
+            byte nRed, nGreen, nBlue;
 
+            byte bp1, bp2;
+
+            for (int x = 0; x < bmap.Width; ++x)
+            {
+                for (int y = 0; y < bmap.Height; ++y)
+                {
+                    fr_x = (int)Math.Floor(x * nWidthFactor);
+                    fr_y = (int)Math.Floor(y * nHeightFactor);
+
+                    cx = fr_x + 1;
+                    if (cx >= temp.Width)
+                        cx = fr_x;
+
+                    cy = fr_y + 1;
+                    if (cy >= temp.Height)
+                        cy = fr_y;
+
+                    fx = x * nWidthFactor - fr_x;
+                    fy = y * nHeightFactor - fr_y;
+                    nx = 1.0 - fx;
+                    ny = 1.0 - fy;
+
+                    color1 = temp.GetPixel(fr_x, fr_y);
+                    color2 = temp.GetPixel(cx, fr_y);
+                    color3 = temp.GetPixel(fr_x, cy);
+                    color4 = temp.GetPixel(cx, cy);
+
+                    // Blue
+                    bp1 = (byte)(nx * color1.B + fx * color2.B);
+                    bp2 = (byte)(nx * color3.B + fx * color4.B);
+                    nBlue = (byte)(ny * (double)(bp1) + fy * (double)(bp2));
+
+                    // Green
+                    bp1 = (byte)(nx * color1.G + fx * color2.G);
+                    bp2 = (byte)(nx * color3.G + fx * color4.G);
+                    nGreen = (byte)(ny * (double)(bp1) + fy * (double)(bp2));
+
+                    // Red
+                    bp1 = (byte)(nx * color1.R + fx * color2.R);
+                    bp2 = (byte)(nx * color3.R + fx * color4.R);
+                    nRed = (byte)(ny * (double)(bp1) + fy * (double)(bp2));
+
+                    bmap.SetPixel(x, y, System.Drawing.Color.FromArgb(255, nRed, nGreen, nBlue));
+                }
+            }
+
+            //here i included the below to functions logic without the for loop to remove repetitive use of for loop but it did not work and taking the same time.
+            bmap = SetGrayscale(bmap);
+            bmap = RemoveNoise(bmap);
+
+            return bmap;
+        }
+
+        //SetGrayscale
+        public Bitmap SetGrayscale(Bitmap img)
+        {
+            Bitmap temp = (Bitmap)img;
+            Bitmap bmap = (Bitmap)temp.Clone();
+            Color c;
+            for (int i = 0; i < bmap.Width; i++)
+            {
+                for (int j = 0; j < bmap.Height; j++)
+                {
+                    c = bmap.GetPixel(i, j);
+                    byte gray = (byte)(.299 * c.R + .587 * c.G + .114 * c.B);
+
+                    bmap.SetPixel(i, j, Color.FromArgb(gray, gray, gray));
+                }
+            }
+            return (Bitmap)bmap.Clone();
+        }
+
+        //RemoveNoise
+        public Bitmap RemoveNoise(Bitmap bmap)
+        {
+            for (var x = 0; x < bmap.Width; x++)
+            {
+                for (var y = 0; y < bmap.Height; y++)
+                {
+                    var pixel = bmap.GetPixel(x, y);
+                    if (pixel.R < 162 && pixel.G < 162 && pixel.B < 162)
+                        bmap.SetPixel(x, y, Color.Black);
+                }
+            }
+
+            for (var x = 0; x < bmap.Width; x++)
+            {
+                for (var y = 0; y < bmap.Height; y++)
+                {
+                    var pixel = bmap.GetPixel(x, y);
+                    if (pixel.R > 162 && pixel.G > 162 && pixel.B > 162)
+                        bmap.SetPixel(x, y, Color.White);
+                }
+            }
+            return bmap;
+        }
+
+        public string GenerateSnapshot(string filePath)
+        {
+            IWebDriver driver = new ChromeDriver();
+            driver.Manage().Window.Maximize(); driver.Navigate().GoToUrl("https://unifiedportal-epfo.epfindia.gov.in/publicPortal/no-auth/misReport/home/loadEstSearchHome");
+            System.Threading.Thread.Sleep(10000);
+
+            var remElement = driver.FindElement(By.Id("captchaImg"));
+            Point location = remElement.Location;
+
+            var screenshot = (driver as ChromeDriver).GetScreenshot();
+            using (MemoryStream stream = new MemoryStream(screenshot.AsByteArray))
+            {
+                using (Bitmap bitmap = new Bitmap(stream))
+                {
+                  var  bmap = SetGrayscale(bitmap);
+                    bmap = RemoveNoise(bmap);
+                    RectangleF part = new RectangleF(location.X, location.Y, remElement.Size.Width, remElement.Size.Height);
+                    using (Bitmap bn = bmap.Clone(part, bmap.PixelFormat))
+                    {
+                        bn.Save(filePath + "CaptchImage.png", System.Drawing.Imaging.ImageFormat.Png);
+                    }
+                }
+            }
+            driver.Close();
+            driver.Dispose();
+            return filePath + "CaptchImage.png";
+       
+        }
+            //reading text from images
+
+        // using (var engine = new TesseractEngine(@"D:\DairymanGit\DynamicScraping\ScrapingMVC\tesseract-ocr\tessdata", "eng",EngineMode.Default))
+        //    {
+
+        //    Tesseract.Page ocrPage = engine.Process(Pix.LoadFromFile(filePath + "CaptchImage.png"), PageSegMode.AutoOnly);
+        //    var captchatext = ocrPage.GetText();
+        //    }
+        //    driver.Close();
+        //    driver.Dispose();
+        //}
+
+        public void MCAAnnualScrapper()
+        {
+            using (var browser = new ChromeDriver())
+            {
+                var options = new ChromeOptions();
+
+                options.AddArgument("no-sandbox");
+                // Go to the home page
+                browser.Manage().Window.Maximize();
+                //browser.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(20);
+               
+                    browser.Navigate().GoToUrl("http://mca.gov.in/mcafoportal/showCheckFilingStatus.do");
+                
+               
+
+                WebDriverWait wait = new WebDriverWait(browser, TimeSpan.FromSeconds(40));
+                wait.Until(d => d.FindElement(By.Id("companiesact1")));
+                System.Threading.Thread.Sleep(5000);
+         
+
+                string query = ConfigurationManager.ConnectionStrings["connString"].ConnectionString;
+                using (MySqlConnection con = new MySqlConnection(query))
+                {
+
+
+                    MySqlCommand cmd = new MySqlCommand("select * from uninsertedannualdetails order by uninsertedannualid desc", con);
+                    cmd.CommandType = CommandType.Text;
+                    con.Open();
+                    List<CompanyDetails> customers = new List<CompanyDetails>();
+
+                    CompanyDetails cd = new CompanyDetails();
+                    MySqlDataAdapter md = new MySqlDataAdapter(cmd);
+                    DataTable dt = new DataTable();
+                    md.Fill(dt);
+                    foreach (DataRow dr in dt.Rows)
+                    {
+
+                        customers.Add(new CompanyDetails
+                        {
+                            primarykey = Convert.ToInt32(dr["uninsertedannualid"].ToString()),
+                            companynamefromdb = dr["companyname"].ToString(),
+                            cinvaluefromdb = dr["cin"].ToString()
+                        });
+
+
+                        var jpk = customers[0].primarykey;
+                        var jcompanyname = customers[0].companynamefromdb;
+                        var jcin = customers[0].cinvaluefromdb;
+
+
+                        //If CIN IS GIVEN
+                        if (jcompanyname == "")
+                        {
+
+                            // Get the page elements
+                            var userNameField = browser.FindElementByName("companyID");
+                            userNameField.Clear();
+                            userNameField.SendKeys(jcin);
+                        }
+
+                            //IF COMPANY IS GIVEN
+                        else
+                        {
+                            browser.FindElementByXPath("//*[@id='imgSearchIcon']").Click();
+                            System.Threading.Thread.Sleep(5000);
+                            var userNameField = browser.FindElementByName("searchcompanyname");
+                            userNameField.Clear();
+                            userNameField.SendKeys(jcompanyname);
+                            //click search after giving companyname
+                            browser.FindElementByXPath("//*[@id='findcindata']").Click();
+                            System.Threading.Thread.Sleep(10000);
+                            //browser.FindElement(By.XPath(@"//*[@id='cinlist']/tbody/tr/td[1]/a[contains(@onclick,'"+jcompanyname+"')]")).Click();
+
+                            //click company name
+                            browser.FindElementByXPath("//*[@id='cinlist']/tbody/tr/td[1]/a").Click();
+
+                         
+
+                        }
+                        System.Threading.Thread.Sleep(5000);
+                        //click submit button
+                        browser.FindElementByXPath("//*[@id='submitBtn']").Click();
+
+                        var rows = (browser.FindElementsByXPath("//table[@id='results']//tbody//tr[@class='table-row'][not(@style)]"));
+	                    var cols = (browser.FindElementsByXPath("//table[@id='results']//tbody//tr[@class='table-header']/th"));
+
+                        if (rows != null)
+                        {
+                            var companyname = browser.FindElementByXPath("//form[@id='checkFiling']//table[@class='input-forms']//tbody//tr[1]//td/input");
+                            var companynames = companyname.GetAttribute("value");
+                            var cin = browser.FindElementByXPath("//form[@id='checkFiling']//table[@class='input-forms']//tbody//tr[2]//td/input");
+                            var cinvalue = cin.GetAttribute("value");
+                            IReadOnlyCollection<IWebElement> rowsr = browser.FindElementsByXPath(("//table[@id='results']//tbody//tr[@class='table-row'][not(@style)]"));
+                            IReadOnlyCollection<IWebElement> colsc = browser.FindElementsByXPath(("//table[@id='results']//tbody//tr[@class='table-header']/th"));
+                            DateTime now = DateTime.Now;
+                            string datevalue = now.ToString("yyyy-MM-dd");
+
+                            String strRowData = "";
+                            // Traverse each row
+                            foreach (var elemTr in rowsr)
+                            {
+
+
+                                List<string> all = new List<string>();
+
+                                List<IWebElement> lstTdElem = new List<IWebElement>(elemTr.FindElements(By.XPath("td")));
+                                if (lstTdElem.Count > 0)
+                                {
+                                    // Traverse each column
+                                    foreach (var elemTd in lstTdElem)
+                                    {
+                                        // "\t\t" is used for Tab Space between two Text
+                                        strRowData = strRowData + elemTd.Text + "\t\t";
+                                        all.Add(elemTd.Text);
+
+                                    }
+
+                                    MySqlCommand cmd9 = new MySqlCommand("INSERT  INTO annualdetails (cin,companyname,srn,eformname,eventdate,challancopy,runtime,datevalue)VALUES (@cin,@companyname,@srn,@eformname,@eventdate,@challancopy,@runtime,@datevalue)", con);
+                                    cmd9.CommandType = CommandType.Text;
+                                    cmd9.Parameters.AddWithValue("@cin", cinvalue);
+                                    cmd9.Parameters.AddWithValue("@companyname", companynames);
+                                    cmd9.Parameters.AddWithValue("@srn", all[0]);
+                                    cmd9.Parameters.AddWithValue("@eformname", all[1]);
+                                    cmd9.Parameters.AddWithValue("@eventdate", all[2]);
+                                    cmd9.Parameters.AddWithValue("@challancopy", all[3]);
+                                    cmd9.Parameters.AddWithValue("@runtime", now);
+                                    cmd9.Parameters.AddWithValue("@datevalue", datevalue);
+                                    cmd9.ExecuteNonQuery();
+
+                                }
+
+
+
+                            }
+
+                            /////////////////////Insert Hidden Content///////////////////////////////////////////////////////////
+
+                            var races_element1 = browser.FindElementByXPath("//table[@id='results']//tbody//tr[@class='table-row'][@style='display: none;']");
+                            if (races_element1 != null)
+                            {
+
+                                IReadOnlyCollection<IWebElement> rowsr1 = browser.FindElementsByXPath(("//table[@id='results']//tbody//tr[@class='table-row'][@style='display: none;']"));
+                                IReadOnlyCollection<IWebElement> colsc1 = browser.FindElementsByXPath(("//table[@id='results']//tbody//tr[@class='table-header']/th"));
+
+                                String strRowData1 = "";
+                                // Traverse each row
+                                foreach (var elemTr in rowsr1)
+                                {
+
+
+                                    List<string> all = new List<string>();
+
+                                    List<IWebElement> lstTdElem = new List<IWebElement>(elemTr.FindElements(By.XPath("td")));
+                                    if (lstTdElem.Count > 0)
+                                    {
+                                        // Traverse each column
+                                        foreach (var elemTd in lstTdElem)
+                                        {
+                                            // "\t\t" is used for Tab Space between two Text
+                                            strRowData1 = strRowData1 + elemTd.Text + "\t\t";
+                                            all.Add(elemTd.GetAttribute("textContent"));
+
+                                        }
+
+                                        MySqlCommand cmd9 = new MySqlCommand("INSERT  INTO annualdetails (cin,companyname,srn,eformname,eventdate,challancopy,runtime,datevalue)VALUES (@cin,@companyname,@srn,@eformname,@eventdate,@challancopy,@runtime,@datevalue)", con);
+                                        cmd9.CommandType = CommandType.Text;
+                                        cmd9.Parameters.AddWithValue("@cin", cinvalue);
+                                        cmd9.Parameters.AddWithValue("@companyname", companynames);
+                                        cmd9.Parameters.AddWithValue("@srn", all[0]);
+                                        cmd9.Parameters.AddWithValue("@eformname", all[1]);
+                                        cmd9.Parameters.AddWithValue("@eventdate", all[2]);
+                                        cmd9.Parameters.AddWithValue("@challancopy", all[3]);
+                                        cmd9.Parameters.AddWithValue("@runtime", now);
+                                        cmd9.Parameters.AddWithValue("@datevalue", datevalue);
+                                        cmd9.ExecuteNonQuery();
+
+                                    }
+
+
+
+                                }
+
+
+                            } //end of if races element1
+                        }
+
+                        else
+                        {
+                            //No rows exists.
+                        }
+                        browser.Close();
+                        //browser.Quit();
+
+                        browser.Dispose();
+
+                        //Delete the entry from uninserted table
+
+                        MySqlCommand cmd8 = new MySqlCommand("delete from uninsertedannualdetails where uninsertedannualid = @uninsertedannualid", con);
+                        cmd8.CommandType = CommandType.Text;
+                        cmd8.Parameters.AddWithValue("@uninsertedannualid", jpk);
+                        cmd8.ExecuteNonQuery();
+                        
+
+                    }
+                }
+            }
+            }
         public List<CompanyDetails> GetNewDetails(string CompanyName, CompanyDetails cd)
         {
 
@@ -468,280 +798,21 @@ namespace ScrapingMVC.Models
 
                         myCommand.ExecuteNonQuery();
 
+                        MySqlCommand myCommands = new MySqlCommand("Insert into uninsertedannualdetails(companyname,cin,runtime) values(@companynames, @cins, @runtimes)", con);
+                        myCommands.Parameters.AddWithValue("@companynames", "");
+                        myCommands.Parameters.AddWithValue("@cins",CompanyName);
+                        myCommands.Parameters.AddWithValue("@runtimes", now);
+                        myCommands.ExecuteNonQuery();
+
                         Scrapper();
+
+                        MCAAnnualScrapper();
+
+
                         //EXECUTE BAT
 
 
 
-                        //string Locat = ConfigurationManager.AppSettings["EXELOG"];
-
-                        //string filepath = Locat + "\\" + "ConsoleBatchFile.exe";
-                        //ProcessStartInfo info = new ProcessStartInfo(filepath);
-                        //info.UseShellExecute = true;
-                        //info.CreateNoWindow = false;
-                        //info.Verb = "runas";
-                        //bool isRunning = Process.GetProcessesByName("ConsoleBatchFile.exe")
-                        //.FirstOrDefault(p => p.MainModule.FileName.StartsWith(@"D:\ConsoleBatchFile\ConsoleBatchFile\bin\Debug")) != default(Process);
-
-                        //if (isRunning == false)
-                        //{
-                        //    Process.Start(info);
-
-
-                        //}
-
-
-
-
-
-
-
-
-                        //System.Diagnostics.Process.Start(@"D:\ScrapingMVC\ScrapingMVC\bin\ConsoleBatchFile.exe");
-
-
-
-                        //Process process = new Process();
-                        //string Locat=ConfigurationManager.AppSettings["EXELOG"];
-
-                        //string filepath = Locat + "\\"+"ConsoleBatchFile.exe";
-                        //process.StartInfo.FileName = filepath;
-                        //process.StartInfo.Verb = "runas";
-                        //process.StartInfo.CreateNoWindow = false;
-                        //process.StartInfo.UseShellExecute = true;
-
-                        //process.Start();
-                        //process.Close();
-
-
-                        //string Locat=ConfigurationManager.AppSettings["EXELOG"];
-
-                        //string filepath = Locat + "\\"+"ConsoleBatchFile.exe";
-                        //System.Diagnostics.Process.Start(filepath);
-
-                        //ProcessStartInfo startinfo = new ProcessStartInfo();
-                        //startinfo.FileName = filepath;
-                        //startinfo.Verb = "runas";
-                        //startinfo.CreateNoWindow = false;
-                        //startinfo.UseShellExecute = true;
-
-
-                        //System.Diagnostics.Process.Start(@"D:\ConsoleBatchFile\ConsoleBatchFile\bin\Debug\ConsoleBatchFile.exe");
-
-
-                        //ProcessStartInfo startinfo = new ProcessStartInfo();
-                        //string Locat=ConfigurationManager.AppSettings["EXELOG"];
-                        //startinfo.FileName = Locat + "ConsoleBatchFile.exe";
-
-                        //@"D:\ConsoleBatchFile\ConsoleBatchFile\bin\Debug\ConsoleBatchFile.exe";
-                        //Locat + "ConsoleBatchFile.exe";
-                        //@"D:\ConsoleBatchFile\ConsoleBatchFile\bin\Debug\ConsoleBatchFile.exe";
-                        //startinfo.Verb = "runas";
-                        //startinfo.CreateNoWindow = false;
-                        //startinfo.UseShellExecute = true;
-                        //Process myProcess = Process.Start(startinfo);
-                        //myProcess.Start();
-
-                        //Process process;
-                        //ProcessStartInfo processInfo = new System.Diagnostics.ProcessStartInfo(@"C:\WINDOWS\system32\cmd.exe", @"/C "); ;
-
-                        //processInfo.UseShellExecute = false;
-                        //processInfo.CreateNoWindow = false;
-                        //processInfo.RedirectStandardError = true;
-                        //processInfo.RedirectStandardOutput = true;
-                        //processInfo.RedirectStandardInput = true;
-                        //processInfo.WorkingDirectory = ConfigurationManager.AppSettings["~/BatchFile/zauba.bat"];
-                        //processInfo.UseShellExecute = false;
-                        //process = Process.Start(processInfo);
-                        //process.WaitForExit();
-
-
-                        //string exeFileAndLocation = @"D:\ConsoleBatchFile\ConsoleBatchFile\bin\Debug\ConsoleBatchFile.exe";
-                        //string arguments = "sampleArgument";
-                        //System.Diagnostics.Process.Start(exeFileAndLocation, arguments);
-
-
-                        //ProcessStartInfo startinfo = new ProcessStartInfo();
-                        //startinfo.FileName = "~/References/ConsoleBatchFile";
-                        //startinfo.CreateNoWindow = false;
-                        //startinfo.UseShellExecute = true;
-                        //Process myProcess = Process.Start(startinfo);
-                        //myProcess.Start();
-
-
-                        //ProcessStartInfo psi = new ProcessStartInfo();
-                        //psi.FileName = "ConsoleBatchFile.exe";
-                        //psi.WorkingDirectory = HttpContext.Current.Server.MapPath("~/bin/");
-                        //Process proc = Process.Start(psi);
-
-
-
-
-
-                        //System.Diagnostics.Process.Start(@"D:\ConsoleBatchFile\ConsoleBatchFile\bin\Debug\ConsoleBatchFile.exe");
-
-
-                        //Process p = new Process();
-                        //p.StartInfo.FileName = @"C:\zauba";
-                        //p.Start();
-
-                        //ExecuteBatFile();
-
-
-
-                        //ProcessStartInfo info = new ProcessStartInfo("C:\\zauba.bat");
-                        //info.UseShellExecute = false;
-                        //info.RedirectStandardInput = true;
-                        //info.RedirectStandardError = true;
-                        //info.RedirectStandardOutput = true;
-                        //info.UserName = dialog.User;   
-                        //info.UserName = "xyz";
-                        //string pass = "xyz";
-                        //System.Security.SecureString secret = new System.Security.SecureString();
-                        //foreach (char c in pass)
-                        //    secret.AppendChar(c);
-                        //info.Password = secret;
-                        //using (Process install = Process.Start(info))
-                        //{
-                        //    string output = install.StandardOutput.ReadToEnd();
-                        //    install.WaitForExit();
-                        //     Do something with you output data          
-                        //    Console.WriteLine(output);
-                        //}
-                        //LaunchCommandLineApp();
-
-                        //var proc1 = new ProcessStartInfo();
-                        //string anyCommand="echo";
-                        //proc1.UseShellExecute = true;
-
-                        //proc1.WorkingDirectory = @"C:\Windows\System32";
-
-                        //proc1.FileName = @"C:\Windows\System32\cmd.exe";
-                        //proc1.Verb = "runas";
-                        //proc1.Arguments = "/c " + anyCommand;
-                        ////proc1.WindowStyle = ProcessWindowStyle.Hidden;
-                        //Process.Start(proc1);
-
-
-
-                        //Process p = new Process();
-                        //p.StartInfo.FileName = "cmd.exe";
-                        //p.StartInfo.RedirectStandardInput = true;
-                        //p.StartInfo.RedirectStandardOutput = true;
-                        //p.StartInfo.CreateNoWindow = true;
-                        //p.StartInfo.UseShellExecute = false;
-                        //p.Start();
-
-                        //p.StandardInput.WriteLine("echo Oscar");
-                        //p.StandardInput.Flush();
-                        //p.StandardInput.Close();
-                        //p.WaitForExit();
-                        //Console.WriteLine(p.StandardOutput.ReadToEnd());
-
-
-
-
-
-                        //String command = @"C:\Users\TRN-0270\zauba.bat";
-                        //ExecuteCommand(command);
-
-
-
-
-                        //string bat = @"C:\Users\TRN-0270\zauba.bat";
-                        //var psi = new ProcessStartInfo();
-                        //psi.CreateNoWindow = false; //This hides the dos-style black window that the command prompt usually shows
-                        //psi.FileName = @"cmd.exe";
-                        //psi.Verb = "runas"; //This is what actually runs the command as administrator
-                        //psi.Arguments = "/C start " + bat;
-                        //try
-                        //{
-                        //    var process = new Process();
-                        //    process.StartInfo = psi;
-                        //    process.Start();
-                        //    process.WaitForExit();
-                        //}
-                        //catch (Exception)
-                        //{
-                        //    //If you are here the user clicked decline to grant admin privileges (or he's not administrator)
-                        //}
-
-
-
-                        //System.Diagnostics.Process.Start("cmd.exe", @"/c C:/Users/TRN-0270/zauba.bat");
-
-
-
-
-                        //string str_Path = HttpContext.Current.Server.MapPath("~/BatchFile/zauba.bat");
-                        //ProcessStartInfo processInfo = new ProcessStartInfo(str_Path);
-                        //processInfo.UseShellExecute = false;
-                        //Process batchProcess = new Process();
-                        //batchProcess.StartInfo = processInfo;
-                        //batchProcess.Start();
-
-
-                        //Process p = new Process();
-
-                        //p.StartInfo.UseShellExecute = false;
-                        //p.StartInfo.FileName = "D:/ScrapingMVC/ScrapingMVC/BatchFile/zauba.bat";
-                        //p.StartInfo.CreateNoWindow = false;
-                        //p.Start();
-
-                        //p.WaitForExit();
-
-
-
-                        //var processInfo = new ProcessStartInfo("cmd.exe", "/c" + "\"C:\\Users\\TRN-0270\\zauba.bat\"");
-
-                        //processInfo.CreateNoWindow = true;
-
-                        //processInfo.UseShellExecute = false;
-
-                        //processInfo.RedirectStandardError = true;
-                        //processInfo.RedirectStandardOutput = true;
-
-                        //var process = Process.Start(processInfo);
-
-                        //process.Start();
-
-
-
-
-
-
-
-
-                        //                  var p = new Process();  
-                        //                    p.StartInfo.UseShellExecute = false;  
-                        //                    p.StartInfo.RedirectStandardOutput = true;  
-                        //                    string eOut = null;
-                        //                    p.StartInfo.RedirectStandardError = true;
-                        //                    p.ErrorDataReceived += new DataReceivedEventHandler((sender, e) => 
-                        //                                               { eOut += e.Data; });
-                        //                    p.StartInfo.FileName = "zauba.bat";  
-                        //                    p.Start();  
-
-                        //// To avoid deadlocks, use an asynchronous read operation on at least one of the streams.  
-                        //p.BeginErrorReadLine();
-                        //string output = p.StandardOutput.ReadToEnd();  
-                        //p.WaitForExit();
-                        //ExecuteBatFile();
-
-
-
-
-                        //ProcessStartInfo info = new ProcessStartInfo("D:/ScrapyMVC/ScrapyMVC/scrapy/zauba.bat"); //exePath must be full path.
-                        //info.CreateNoWindow = true;
-                        //info.UseShellExecute = false;
-                        //var user = System.Security.Principal.WindowsIdentity.GetCurrent().User;
-                        //var userName = user.Translate(typeof(System.Security.Principal.NTAccount));
-                        //Process.Start(info);
-
-
-
-
-                        //ExecuteBatchFile("D:/ScrapyMVC/ScrapyMVC/scrapy/zauba.bat",1000,false);
 
 
                         MySqlCommand cmd = new MySqlCommand("SELECT DISTINCT c.cin, c.companyname,c.companystatus,c.roc,c.registrationnumber,c.companycategory,c.companysubcategory,c.companyclass,c.dateofincorporation,c.ageofcompany,c.activity,c.numberofmembers from companydetails c  where c.cin = @cin", con);
@@ -783,17 +854,17 @@ namespace ScrapingMVC.Models
                 }
                 else if (cd.companynames == "Company Name") //If Company Name is Given 
                 {
-                    MySqlCommand check_User_Name = new MySqlCommand("SELECT COUNT(*) FROM companydetails WHERE companyname = @cin", con);
-                    check_User_Name.Parameters.AddWithValue("@cin", CompanyName);
+                    MySqlCommand check_User_Name = new MySqlCommand("SELECT COUNT(*) FROM companydetails WHERE companyname like @cin", con);
+                    check_User_Name.Parameters.AddWithValue("@cin", "%"+CompanyName+"%");
                     var CompanyExist = Convert.ToInt32(check_User_Name.ExecuteScalar());
 
                     if (CompanyExist > 0)
                     {
                         //Company exist
 
-                        MySqlCommand cmd = new MySqlCommand("SELECT DISTINCT c.cin, c.companyname,c.companystatus,c.roc,c.registrationnumber,c.companycategory,c.companysubcategory,c.companyclass,c.dateofincorporation,c.ageofcompany,c.activity,c.numberofmembers from companydetails c  where c.companyname = @companyname", con);
+                        MySqlCommand cmd = new MySqlCommand("SELECT DISTINCT c.cin, c.companyname,c.companystatus,c.roc,c.registrationnumber,c.companycategory,c.companysubcategory,c.companyclass,c.dateofincorporation,c.ageofcompany,c.activity,c.numberofmembers from companydetails c  where c.companyname like @companyname", con);
                         cmd.CommandType = CommandType.Text;
-                        cmd.Parameters.AddWithValue("@companyname", CompanyName);
+                        cmd.Parameters.AddWithValue("@companyname", "%"+CompanyName+"%");
                         MySqlDataAdapter sd = new MySqlDataAdapter(cmd);
                         DataTable dt = new DataTable();
                         sd.Fill(dt);
@@ -835,13 +906,23 @@ namespace ScrapingMVC.Models
                         myCommand.Parameters.AddWithValue("@runtime", now);
                         myCommand.ExecuteNonQuery();
 
-                        //Execute BAT
+                        MySqlCommand myCommands = new MySqlCommand("Insert into uninsertedannualdetails(companyname,cin,runtime) values(@companynames, @cins, @runtimes)", con);
+                        myCommands.Parameters.AddWithValue("@companynames", CompanyName);
+                        myCommands.Parameters.AddWithValue("@cins", "");
+                        myCommands.Parameters.AddWithValue("@runtimes", now);
+                        myCommands.ExecuteNonQuery();
 
+
+                        //Execute BAT
                         Scrapper();
 
-                        MySqlCommand cmd = new MySqlCommand("SELECT  DISTINCT c.cin, c.companyname,c.companystatus,c.roc,c.registrationnumber,c.companycategory,c.companysubcategory,c.companyclass,c.dateofincorporation,c.ageofcompany,c.activity,c.numberofmembers from companydetails c  where c.companyname = @companyname", con);
+                        MCAAnnualScrapper();
+
+
+
+                        MySqlCommand cmd = new MySqlCommand("SELECT  DISTINCT c.cin, c.companyname,c.companystatus,c.roc,c.registrationnumber,c.companycategory,c.companysubcategory,c.companyclass,c.dateofincorporation,c.ageofcompany,c.activity,c.numberofmembers from companydetails c  where c.companyname like @companyname", con);
                         cmd.CommandType = CommandType.Text;
-                        cmd.Parameters.AddWithValue("@companyname", CompanyName);
+                        cmd.Parameters.AddWithValue("@companyname", "%"+CompanyName+ "%");
                         MySqlDataAdapter sd = new MySqlDataAdapter(cmd);
                         DataTable dt = new DataTable();
                         sd.Fill(dt);
@@ -937,65 +1018,6 @@ namespace ScrapingMVC.Models
                         myCommand.Parameters.AddWithValue("@cin", CompanyName);
                         myCommand.ExecuteNonQuery();
 
-                        //EXECUTE BAT
-
-
-                        //string str_Path = HttpContext.Current.Server.MapPath("~/BatchFile/zauba.bat");
-                        //ProcessStartInfo processInfo = new ProcessStartInfo(str_Path);
-                        //processInfo.UseShellExecute = false;
-                        //Process batchProcess = new Process();
-                        //batchProcess.StartInfo = processInfo;
-                        //batchProcess.Start();
-
-
-                        //Process p = new Process();
-
-                        //p.StartInfo.UseShellExecute = false;
-                        //p.StartInfo.FileName = "D:/ScrapingMVC/ScrapingMVC/BatchFile/zauba.bat";
-                        //p.StartInfo.CreateNoWindow = false;
-                        //p.Start();
-
-                        //p.WaitForExit();
-
-
-
-
-                        //Scrapper();
-
-
-
-                        //                  var p = new Process();  
-                        //                    p.StartInfo.UseShellExecute = false;  
-                        //                    p.StartInfo.RedirectStandardOutput = true;  
-                        //                    string eOut = null;
-                        //                    p.StartInfo.RedirectStandardError = true;
-                        //                    p.ErrorDataReceived += new DataReceivedEventHandler((sender, e) => 
-                        //                                               { eOut += e.Data; });
-                        //                    p.StartInfo.FileName = "zauba.bat";  
-                        //                    p.Start();  
-
-                        //// To avoid deadlocks, use an asynchronous read operation on at least one of the streams.  
-                        //p.BeginErrorReadLine();
-                        //string output = p.StandardOutput.ReadToEnd();  
-                        //p.WaitForExit();
-                        //ExecuteBatFile();
-
-
-
-
-                        //ProcessStartInfo info = new ProcessStartInfo("D:/ScrapyMVC/ScrapyMVC/scrapy/zauba.bat"); //exePath must be full path.
-                        //info.CreateNoWindow = true;
-                        //info.UseShellExecute = false;
-                        //var user = System.Security.Principal.WindowsIdentity.GetCurrent().User;
-                        //var userName = user.Translate(typeof(System.Security.Principal.NTAccount));
-                        //Process.Start(info);
-
-
-
-
-                        //ExecuteBatchFile("D:/ScrapyMVC/ScrapyMVC/scrapy/zauba.bat",1000,false);
-
-
                         MySqlCommand cmd = new MySqlCommand("select DISTINCT s.authorizedcapital,s.paidupcapital from sharecapital s  where s.cin = @cin", con);
                         cmd.CommandType = CommandType.Text;
                         cmd.Parameters.AddWithValue("@cin", CompanyName);
@@ -1025,17 +1047,17 @@ namespace ScrapingMVC.Models
                 }
                 else if (cd.companynames == "Company Name") //If Company Name is Given 
                 {
-                    MySqlCommand check_User_Name = new MySqlCommand("SELECT COUNT(*) FROM sharecapital WHERE companyname = @cin", con);
-                    check_User_Name.Parameters.AddWithValue("@cin", CompanyName);
+                    MySqlCommand check_User_Name = new MySqlCommand("SELECT COUNT(*) FROM sharecapital WHERE companyname like @cin", con);
+                    check_User_Name.Parameters.AddWithValue("@cin", "%"+CompanyName+"%");
                     var CompanyExist = Convert.ToInt32(check_User_Name.ExecuteScalar());
 
                     if (CompanyExist > 0)
                     {
                         //Company exist
 
-                        MySqlCommand cmd = new MySqlCommand("SELECT DISTINCT  s.authorizedcapital,s.paidupcapital from sharecapital s  where s.companyname = @companyname", con);
+                        MySqlCommand cmd = new MySqlCommand("SELECT DISTINCT  s.authorizedcapital,s.paidupcapital from sharecapital s  where s.companyname like @companyname", con);
                         cmd.CommandType = CommandType.Text;
-                        cmd.Parameters.AddWithValue("@companyname", CompanyName);
+                        cmd.Parameters.AddWithValue("@companyname", "%"+CompanyName+"%");
                         MySqlDataAdapter sd = new MySqlDataAdapter(cmd);
                         DataTable dt = new DataTable();
                         sd.Fill(dt);
@@ -1074,9 +1096,9 @@ namespace ScrapingMVC.Models
 
                         //Scrapper();
 
-                        MySqlCommand cmd = new MySqlCommand("SELECT DISTINCT  s.authorizedcapital,s.paidupcapital from sharecapital s  where s.companyname = @companyname", con);
+                        MySqlCommand cmd = new MySqlCommand("SELECT DISTINCT  s.authorizedcapital,s.paidupcapital from sharecapital s  where s.companyname like @companyname", con);
                         cmd.CommandType = CommandType.Text;
-                        cmd.Parameters.AddWithValue("@companyname", CompanyName);
+                        cmd.Parameters.AddWithValue("@companyname", "%"+CompanyName+"%");
                         MySqlDataAdapter sd = new MySqlDataAdapter(cmd);
                         DataTable dt = new DataTable();
                         sd.Fill(dt);
@@ -1159,64 +1181,6 @@ namespace ScrapingMVC.Models
                         myCommand.Parameters.AddWithValue("@cin", CompanyName);
                         myCommand.ExecuteNonQuery();
 
-                        //EXECUTE BAT
-
-                        //Scrapper();
-                        //string str_Path = HttpContext.Current.Server.MapPath("~/BatchFile/zauba.bat");
-                        //ProcessStartInfo processInfo = new ProcessStartInfo(str_Path);
-                        //processInfo.UseShellExecute = false;
-                        //Process batchProcess = new Process();
-                        //batchProcess.StartInfo = processInfo;
-                        //batchProcess.Start();
-
-
-                        //Process p = new Process();
-
-                        //p.StartInfo.UseShellExecute = false;
-                        //p.StartInfo.FileName = "D:/ScrapingMVC/ScrapingMVC/BatchFile/zauba.bat";
-                        //p.StartInfo.CreateNoWindow = false;
-                        //p.Start();
-
-                        //p.WaitForExit();
-
-
-
-
-
-
-
-
-                        //                  var p = new Process();  
-                        //                    p.StartInfo.UseShellExecute = false;  
-                        //                    p.StartInfo.RedirectStandardOutput = true;  
-                        //                    string eOut = null;
-                        //                    p.StartInfo.RedirectStandardError = true;
-                        //                    p.ErrorDataReceived += new DataReceivedEventHandler((sender, e) => 
-                        //                                               { eOut += e.Data; });
-                        //                    p.StartInfo.FileName = "zauba.bat";  
-                        //                    p.Start();  
-
-                        //// To avoid deadlocks, use an asynchronous read operation on at least one of the streams.  
-                        //p.BeginErrorReadLine();
-                        //string output = p.StandardOutput.ReadToEnd();  
-                        //p.WaitForExit();
-                        //ExecuteBatFile();
-
-
-
-
-                        //ProcessStartInfo info = new ProcessStartInfo("D:/ScrapyMVC/ScrapyMVC/scrapy/zauba.bat"); //exePath must be full path.
-                        //info.CreateNoWindow = true;
-                        //info.UseShellExecute = false;
-                        //var user = System.Security.Principal.WindowsIdentity.GetCurrent().User;
-                        //var userName = user.Translate(typeof(System.Security.Principal.NTAccount));
-                        //Process.Start(info);
-
-
-
-
-                        //ExecuteBatchFile("D:/ScrapyMVC/ScrapyMVC/scrapy/zauba.bat",1000,false);
-
 
                         MySqlCommand cmd = new MySqlCommand("SELECT DISTINCT a.listingstatus,a.dateoflastgeneralmeeting,a.dateoflastestbalancesheet from annualcompliance a  where a.cin = @cin", con);
                         cmd.CommandType = CommandType.Text;
@@ -1247,17 +1211,17 @@ namespace ScrapingMVC.Models
                 }
                 else if (cd.companynames == "Company Name") //If Company Name is Given 
                 {
-                    MySqlCommand check_User_Name = new MySqlCommand("SELECT COUNT(*) FROM annualcompliance WHERE companyname = @cin", con);
-                    check_User_Name.Parameters.AddWithValue("@cin", CompanyName);
+                    MySqlCommand check_User_Name = new MySqlCommand("SELECT COUNT(*) FROM annualcompliance WHERE companyname like @cin", con);
+                    check_User_Name.Parameters.AddWithValue("@cin", "%"+CompanyName+"%");
                     var CompanyExist = Convert.ToInt32(check_User_Name.ExecuteScalar());
 
                     if (CompanyExist > 0)
                     {
                         //Company exist
 
-                        MySqlCommand cmd = new MySqlCommand("SELECT DISTINCT  a.listingstatus,a.dateoflastgeneralmeeting,a.dateoflastestbalancesheet from annualcompliance a  where a.companyname = @companyname", con);
+                        MySqlCommand cmd = new MySqlCommand("SELECT DISTINCT  a.listingstatus,a.dateoflastgeneralmeeting,a.dateoflastestbalancesheet from annualcompliance a  where a.companyname like @companyname", con);
                         cmd.CommandType = CommandType.Text;
-                        cmd.Parameters.AddWithValue("@companyname", CompanyName);
+                        cmd.Parameters.AddWithValue("@companyname", "%"+CompanyName+"%");
                         MySqlDataAdapter sd = new MySqlDataAdapter(cmd);
                         DataTable dt = new DataTable();
                         sd.Fill(dt);
@@ -1285,21 +1249,12 @@ namespace ScrapingMVC.Models
                         myCommand.Parameters.AddWithValue("@cin", "");
                         myCommand.ExecuteNonQuery();
 
-                        //Scrapper();
-                        //Execute BAT
-
-                        //string str_Path = HttpContext.Current.Server.MapPath("~/BatchFile/zauba.bat");
-                        //ProcessStartInfo processInfo = new ProcessStartInfo(str_Path);
-                        //processInfo.UseShellExecute = false;
-                        //Process batchProcess = new Process();
-                        //batchProcess.StartInfo = processInfo;
-                        //batchProcess.Start();
 
 
 
-                        MySqlCommand cmd = new MySqlCommand("SELECT DISTINCT  a.listingstatus,a.dateoflastgeneralmeeting,a.dateoflastestbalancesheet from annualcompliance a  where a.companyname = @companyname", con);
+                        MySqlCommand cmd = new MySqlCommand("SELECT DISTINCT  a.listingstatus,a.dateoflastgeneralmeeting,a.dateoflastestbalancesheet from annualcompliance a  where a.companyname like @companyname", con);
                         cmd.CommandType = CommandType.Text;
-                        cmd.Parameters.AddWithValue("@companyname", CompanyName);
+                        cmd.Parameters.AddWithValue("@companyname", "%"+CompanyName+"%");
                         MySqlDataAdapter sd = new MySqlDataAdapter(cmd);
                         DataTable dt = new DataTable();
                         sd.Fill(dt);
@@ -1420,17 +1375,17 @@ namespace ScrapingMVC.Models
                 }
                 else if (cd.companynames == "Company Name") //If Company Name is Given 
                 {
-                    MySqlCommand check_User_Name = new MySqlCommand("SELECT COUNT(*) FROM companydetails WHERE companyname = @cin", con);
-                    check_User_Name.Parameters.AddWithValue("@cin", CompanyName);
+                    MySqlCommand check_User_Name = new MySqlCommand("SELECT COUNT(*) FROM companydetails WHERE companyname like @cin", con);
+                    check_User_Name.Parameters.AddWithValue("@cin", "%"+CompanyName+"%");
                     var CompanyExist = Convert.ToInt32(check_User_Name.ExecuteScalar());
 
                     if (CompanyExist > 0)
                     {
                         //Company exist
 
-                        MySqlCommand cmd = new MySqlCommand("SELECT DISTINCT  d.din,d.directorname,d.designation,d.appointmentdate from directordetails d  where d.companyname = @companyname", con);
+                        MySqlCommand cmd = new MySqlCommand("SELECT DISTINCT  d.din,d.directorname,d.designation,d.appointmentdate from directordetails d  where d.companyname like @companyname", con);
                         cmd.CommandType = CommandType.Text;
-                        cmd.Parameters.AddWithValue("@companyname", CompanyName);
+                        cmd.Parameters.AddWithValue("@companyname", "%"+CompanyName+"%");
                         MySqlDataAdapter sd = new MySqlDataAdapter(cmd);
                         DataTable dt = new DataTable();
                         sd.Fill(dt);
@@ -1460,20 +1415,12 @@ namespace ScrapingMVC.Models
                         myCommand.Parameters.AddWithValue("@cin", "");
                         myCommand.ExecuteNonQuery();
 
-                        //Execute BAT
-                        //Scrapper();
-                        //string str_Path = HttpContext.Current.Server.MapPath("~/BatchFile/zauba.bat");
-                        //ProcessStartInfo processInfo = new ProcessStartInfo(str_Path);
-                        //processInfo.UseShellExecute = false;
-                        //Process batchProcess = new Process();
-                        //batchProcess.StartInfo = processInfo;
-                        //batchProcess.Start();
 
 
 
-                        MySqlCommand cmd = new MySqlCommand("SELECT DISTINCT  d.din,d.directorname,d.designation,d.appointmentdate from directordetails d  where d.companyname = @companyname", con);
+                        MySqlCommand cmd = new MySqlCommand("SELECT DISTINCT  d.din,d.directorname,d.designation,d.appointmentdate from directordetails d  where d.companyname like @companyname", con);
                         cmd.CommandType = CommandType.Text;
-                        cmd.Parameters.AddWithValue("@companyname", CompanyName);
+                        cmd.Parameters.AddWithValue("@companyname", "%"+CompanyName+"%");
                         MySqlDataAdapter sd = new MySqlDataAdapter(cmd);
                         DataTable dt = new DataTable();
                         sd.Fill(dt);
@@ -1601,17 +1548,17 @@ namespace ScrapingMVC.Models
                 }
                 else if (cd.companynames == "Company Name") //If Company Name is Given 
                 {
-                    MySqlCommand check_User_Name = new MySqlCommand("SELECT COUNT(*) FROM companydetails WHERE companyname = @cin", con);
-                    check_User_Name.Parameters.AddWithValue("@cin", CompanyName);
+                    MySqlCommand check_User_Name = new MySqlCommand("SELECT COUNT(*) FROM companydetails WHERE companyname like @cin", con);
+                    check_User_Name.Parameters.AddWithValue("@cin", "%"+CompanyName+"%");
                     var CompanyExist = Convert.ToInt32(check_User_Name.ExecuteScalar());
 
                     if (CompanyExist > 0)
                     {
                         //Company exist
 
-                        MySqlCommand cmd = new MySqlCommand("SELECT DISTINCT c.chargeid,c.creationdate,c.modificationdate,c.closuredate,c.assetsundercharge,c.amount,c.chargeholder from chargesdetails c where c.companyname = @companyname", con);
+                        MySqlCommand cmd = new MySqlCommand("SELECT DISTINCT c.chargeid,c.creationdate,c.modificationdate,c.closuredate,c.assetsundercharge,c.amount,c.chargeholder from chargesdetails c where c.companyname like @companyname", con);
                         cmd.CommandType = CommandType.Text;
-                        cmd.Parameters.AddWithValue("@companyname", CompanyName);
+                        cmd.Parameters.AddWithValue("@companyname", "%"+CompanyName+"%");
                         MySqlDataAdapter sd = new MySqlDataAdapter(cmd);
                         DataTable dt = new DataTable();
                         sd.Fill(dt);
@@ -1644,21 +1591,12 @@ namespace ScrapingMVC.Models
                         myCommand.Parameters.AddWithValue("@cin", "");
                         myCommand.ExecuteNonQuery();
 
-                        //Scrapper();
-                        //Execute BAT
-
-                        //string str_Path = HttpContext.Current.Server.MapPath("~/BatchFile/zauba.bat");
-                        //ProcessStartInfo processInfo = new ProcessStartInfo(str_Path);
-                        //processInfo.UseShellExecute = false;
-                        //Process batchProcess = new Process();
-                        //batchProcess.StartInfo = processInfo;
-                        //batchProcess.Start();
 
 
 
-                        MySqlCommand cmd = new MySqlCommand("SELECT DISTINCT c.chargeid,c.creationdate,c.modificationdate,c.closuredate,c.assetsundercharge,c.amount,c.chargeholder from chargesdetails c where c.companyname = @companyname", con);
+                        MySqlCommand cmd = new MySqlCommand("SELECT DISTINCT c.chargeid,c.creationdate,c.modificationdate,c.closuredate,c.assetsundercharge,c.amount,c.chargeholder from chargesdetails c where c.companyname like @companyname", con);
                         cmd.CommandType = CommandType.Text;
-                        cmd.Parameters.AddWithValue("@companyname", CompanyName);
+                        cmd.Parameters.AddWithValue("@companyname", "%"+CompanyName+"%");
                         MySqlDataAdapter sd = new MySqlDataAdapter(cmd);
                         DataTable dt = new DataTable();
                         sd.Fill(dt);
@@ -1785,17 +1723,17 @@ namespace ScrapingMVC.Models
                 }
                 else if (cd.companynames == "Company Name") //If Company Name is Given 
                 {
-                    MySqlCommand check_User_Name = new MySqlCommand("SELECT COUNT(*) FROM companydetails WHERE companyname = @cin", con);
-                    check_User_Name.Parameters.AddWithValue("@cin", CompanyName);
+                    MySqlCommand check_User_Name = new MySqlCommand("SELECT COUNT(*) FROM companydetails WHERE companyname like @cin", con);
+                    check_User_Name.Parameters.AddWithValue("@cin", "%"+CompanyName+"%");
                     var CompanyExist = Convert.ToInt32(check_User_Name.ExecuteScalar());
 
                     if (CompanyExist > 0)
                     {
                         //Company exist
 
-                        MySqlCommand cmd = new MySqlCommand("SELECT DISTINCT  e.establishmentname,e.city, e.pincode,e.address from establishmentdetails e  where e.companyname = @companyname", con);
+                        MySqlCommand cmd = new MySqlCommand("SELECT DISTINCT  e.establishmentname,e.city, e.pincode,e.address from establishmentdetails e  where e.companyname like @companyname", con);
                         cmd.CommandType = CommandType.Text;
-                        cmd.Parameters.AddWithValue("@companyname", CompanyName);
+                        cmd.Parameters.AddWithValue("@companyname", "%"+CompanyName+"%");
                         MySqlDataAdapter sd = new MySqlDataAdapter(cmd);
                         DataTable dt = new DataTable();
                         sd.Fill(dt);
@@ -1837,9 +1775,9 @@ namespace ScrapingMVC.Models
 
                         //Scrapper();
 
-                        MySqlCommand cmd = new MySqlCommand("SELECT  DISTINCT e.establishmentname,e.city, e.pincode,e.address from establishmentdetails e  where e.companyname = @companyname", con);
+                        MySqlCommand cmd = new MySqlCommand("SELECT  DISTINCT e.establishmentname,e.city, e.pincode,e.address from establishmentdetails e  where e.companyname like @companyname", con);
                         cmd.CommandType = CommandType.Text;
-                        cmd.Parameters.AddWithValue("@companyname", CompanyName);
+                        cmd.Parameters.AddWithValue("@companyname", "%"+CompanyName+"%");
                         MySqlDataAdapter sd = new MySqlDataAdapter(cmd);
                         DataTable dt = new DataTable();
                         sd.Fill(dt);
@@ -1957,5 +1895,185 @@ namespace ScrapingMVC.Models
             }
 
         }
+
+
+        //GET ANNUAL DETAILS
+
+
+        public List<CompanyDetails> GetAnnualDetails(string CompanyName, CompanyDetails cd)
+        {
+
+            string query = ConfigurationManager.ConnectionStrings["connString"].ConnectionString;
+            using (MySqlConnection con = new MySqlConnection(query))
+            {
+                con.Open();
+
+                List<CompanyDetails> customers = new List<CompanyDetails>();
+                if (cd.cins == "CIN")
+                {
+                    MySqlCommand check_User_Name = new MySqlCommand("SELECT COUNT(*) FROM companydetails WHERE cin = @cin", con);
+                    check_User_Name.Parameters.AddWithValue("@cin", CompanyName);
+                    var CinExist = Convert.ToInt32(check_User_Name.ExecuteScalar());
+
+                    if (CinExist > 0)
+                    {
+                        //CIN exist
+
+                        MySqlCommand cmd = new MySqlCommand("SELECT DISTINCT a.cin, a.companyname,a.srn,a.eformname,a.eventdate from annualdetails a  where a.cin = @cin", con);
+                        cmd.CommandType = CommandType.Text;
+                        cmd.Parameters.AddWithValue("@cin", CompanyName);
+                        MySqlDataAdapter sd = new MySqlDataAdapter(cmd);
+                        DataTable dt = new DataTable();
+                        sd.Fill(dt);
+                        foreach (DataRow dr in dt.Rows)
+                        {
+                            customers.Add(
+                                new CompanyDetails
+                                {
+                                
+                                    srn = dr["srn"].ToString(),
+                                    eformname = dr["eformname"].ToString(),
+                                    eventdate = dr["eventdate"].ToString()
+                                   
+
+                                });
+                        }
+                        return customers;
+                    }
+
+
+
+
+                    else
+                    {
+                        //CIn doesn't exist.
+                        DateTime now = DateTime.Now;
+                        MySqlCommand myCommand = new MySqlCommand("Insert into uninsertedannualdetails(companyname,cin,runtime) values(@companyname, @cin,@now)", con);
+                        myCommand.Parameters.AddWithValue("@companyname", "");
+                        myCommand.Parameters.AddWithValue("@cin", CompanyName);
+                        myCommand.Parameters.AddWithValue("@now", now);
+
+                        myCommand.ExecuteNonQuery();
+
+                        //Scrapper();
+                        //EXECUTE BAT
+
+
+
+
+
+                        MySqlCommand cmd = new MySqlCommand("SELECT DISTINCT a.cin, a.companyname,a.srn,a.eformname,a.eventdate from annualdetails a  where a.cin = @cin", con);
+                        cmd.CommandType = CommandType.Text;
+                        cmd.Parameters.AddWithValue("@cin", CompanyName);
+                        MySqlDataAdapter sd = new MySqlDataAdapter(cmd);
+                        DataTable dt = new DataTable();
+                        sd.Fill(dt);
+                        foreach (DataRow dr in dt.Rows)
+                        {
+                            customers.Add(
+                                new CompanyDetails
+                                {
+                                    cin = dr["cin"].ToString(),
+                                    companyname = dr["companyname"].ToString(),
+                                    srn = dr["srn"].ToString(),
+                                    eformname = dr["eformname"].ToString(),
+                                    eventdate = dr["eventdate"].ToString()
+                               
+                                });
+                        }
+                        return customers;
+
+
+
+
+
+                    }
+
+
+                }
+                else if (cd.companynames == "Company Name") //If Company Name is Given 
+                {
+                    MySqlCommand check_User_Name = new MySqlCommand("SELECT COUNT(*) FROM companydetails WHERE companyname like @cin", con);
+                    check_User_Name.Parameters.AddWithValue("@cin", "%" + CompanyName + "%");
+                    var CompanyExist = Convert.ToInt32(check_User_Name.ExecuteScalar());
+
+                    if (CompanyExist > 0)
+                    {
+                        //Company exist
+
+                        MySqlCommand cmd = new MySqlCommand("SELECT DISTINCT a.cin, a.companyname,a.srn,a.eformname,a.eventdate from annualdetails a  where a.companyname like @companyname", con);
+                        cmd.CommandType = CommandType.Text;
+                        cmd.Parameters.AddWithValue("@companyname", "%" + CompanyName + "%");
+                        MySqlDataAdapter sd = new MySqlDataAdapter(cmd);
+                        DataTable dt = new DataTable();
+                        sd.Fill(dt);
+                        foreach (DataRow dr in dt.Rows)
+                        {
+                            customers.Add(
+                                new CompanyDetails
+                                {
+                                   
+                                    srn = dr["srn"].ToString(),
+                                    eformname = dr["eformname"].ToString(),
+                                    eventdate = dr["eventdate"].ToString()
+                               
+                                });
+                        }
+                        return customers;
+                    }
+
+
+
+
+                    else
+                    {
+                        //Company doesn't exist.
+                        DateTime now = DateTime.Now;
+
+                        MySqlCommand myCommand = new MySqlCommand("Insert into uninsertedannualdetails(companyname,cin,runtime) values(@companyname, @cin, @runtime)", con);
+                        myCommand.Parameters.AddWithValue("@companyname", CompanyName);
+                        myCommand.Parameters.AddWithValue("@cin", "");
+                        myCommand.Parameters.AddWithValue("@runtime", now);
+                        myCommand.ExecuteNonQuery();
+
+                        //Execute BAT
+
+                        //Scrapper();
+
+                        MySqlCommand cmd = new MySqlCommand("SELECT DISTINCT a.cin, a.companyname,a.srn,a.eformname,a.eventdate from annualdetails a  where a.companyname like @companyname", con);
+                        cmd.CommandType = CommandType.Text;
+                        cmd.Parameters.AddWithValue("@companyname", "%" + CompanyName + "%");
+                        MySqlDataAdapter sd = new MySqlDataAdapter(cmd);
+                        DataTable dt = new DataTable();
+                        sd.Fill(dt);
+                        foreach (DataRow dr in dt.Rows)
+                        {
+                            customers.Add(
+                                new CompanyDetails
+                                {
+                                    cin = dr["cin"].ToString(),
+                                    companyname = dr["companyname"].ToString(),
+                                    srn = dr["srn"].ToString(),
+                                    eformname = dr["eformname"].ToString(),
+                                    eventdate = dr["eventdate"].ToString()
+                                });
+                        }
+                        return customers;
+
+
+
+
+
+                    } //end of else
+
+
+                }
+                return customers;
+
+            }
+
+        }
+
+
     }
 }

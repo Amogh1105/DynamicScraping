@@ -1,0 +1,45 @@
+﻿@model IEnumerable<ScrapingMVC.Models.ReturnStatus>
+
+@{
+    ViewBag.Title = "ReturnStatus";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+
+
+
+<div>
+
+    <table class="table table-bordered table-responsive table-hover">
+        <tr>
+            <th>Return Period </th>
+            <th>Return Type</th>
+            <th>Status </th>
+            <th>Date Of Filing</th>
+            <th>ARN</th>
+
+        </tr>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td> @item.ret_prd </td>
+                <td> @item.rtntype </td>
+                <td> @item.status </td>
+                <td> @item.dof </td>
+                <td> @item.arn </td>
+            </tr>
+        }
+    </table>
+
+
+    @*Return Type:  @item.rtntype
+        <br />
+        Return Period: @item.ret_prd
+        <br />
+        Date of Filing: @item.dof
+        <br />
+        Status:   @item.status
+        <br />
+        ARN: @item.arn
+        <hr />*@
+</div>

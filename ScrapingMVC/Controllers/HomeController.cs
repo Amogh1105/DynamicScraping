@@ -5,7 +5,11 @@ using System.Web;
 using System.Web.Mvc;
 using System.Configuration;
 using ScrapingMVC.Models;
+using Tesseract;
 using System.Diagnostics;
+using System.Text.RegularExpressions;
+using ScrapingMVC.Helpers;
+
 
 namespace ScrapingMVC.Controllers
 {
@@ -31,20 +35,7 @@ namespace ScrapingMVC.Controllers
             cd.customers3 = dal.GetDirectorDetails(CinNumber, cd);
             cd.customers4 = dal.GetChargesDetails(CinNumber, cd);
             cd.customers5 = dal.GetEstablishmentDetails(CinNumber, cd);
-
-
-
-            //Process process = new Process();
-            //string Locat = ConfigurationManager.AppSettings["EXELOG"];
-
-            //string filepath = Locat + "\\" + "ConsoleBatchFile.exe";
-            //process.StartInfo.FileName = filepath;
-            //process.StartInfo.Verb = "runas";
-            //process.StartInfo.CreateNoWindow = false;
-            //process.StartInfo.UseShellExecute = true;
-
-            //process.Start();
-            //process.Close();
+            cd.customers6 = dal.GetAnnualDetails(CinNumber, cd);
 
 
            var dd = cd.customers.Concat(cd.customers1);
@@ -52,7 +43,8 @@ namespace ScrapingMVC.Controllers
            var ff=ee.Concat(cd.customers3);
            var gg=ff.Concat(cd.customers4);
            var hh = gg.Concat(cd.customers5);
-            return View("Result",hh);
+           var ii = hh.Concat(cd.customers6);
+            return View("Result",ii);
            
         }
 
@@ -87,17 +79,32 @@ namespace ScrapingMVC.Controllers
                 //    isRedirect = true
                 //});
             }
-        
 
 
-        //public ActionResult EPFO()
-        //{
-        //    var folderRootPath = HttpContext.Server.MapPath("~/images/");
 
-        //    string imagepath = "D:\\DairymanGit\\DynamicScraping\\ScrapingMVC\\images\\";
-        //    dal.GenerateSnapshot(folderRootPath);
-        //    return View();
-        //}
+        public ActionResult EPFO()
+        {
+            var folderRootPath = HttpContext.Server.MapPath("~/images/");
+
+            //string imagepath = "D:\\DairymanGit\\DynamicScraping\\ScrapingMVC\\images\\";
+        var xd= dal.GenerateSnapshot(folderRootPath);
+          using (var engine = new TesseractEngine(Server.MapPath(@"~/tessdata"), "eng",EngineMode.Default))
+        {
+
+    Page ocrPage = engine.Process(Pix.LoadFromFile(xd), PageSegMode.SingleBlock);
+    var text = ocrPage.GetText();
+    text = Regex.Replace(text, @"\t|\n|\r|\s", "");
+    text = text.Trim(' ');
+    char[] textArray = null;
+    textArray = text.ToCharArray();
+
+    ViewBag.res = text;
+    ViewBag.Result = true;
+    ViewBag.mean = String.Format("{0:p}", ocrPage.GetMeanConfidence());
+    return View();
+
+        }   
+        }
         
         [ScrapingMVC.MvcApplication.NoDirectAccess]
         public ActionResult TotalItems()
@@ -107,6 +114,54 @@ namespace ScrapingMVC.Controllers
             cd.customers = dal.GetTotalCompanyCINCount();
             return View(cd.customers);
         }
+
+        [HttpGet]
+        public ActionResult GST()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        public ActionResult GST(string GSTSearch, FormCollection form)
+        {
+            string fiscalyear = form["FiscalYear"].ToString();
+
+            var resBodyJson = GSTNDataHelper.GetPublicReturnStatus(GSTSearch, fiscalyear);
+            List<ReturnStatus> eList = new List<ReturnStatus>();
+            foreach (var item in resBodyJson)
+            {
+                var list = item.EFiledlist;
+                if (list != null)
+                {
+
+                    foreach (var listitem in list)
+                    {
+                        ReturnStatus rt = new ReturnStatus();
+
+                        rt.arn = listitem.arn;
+                        rt.dof = listitem.dof;
+                        rt.mof = listitem.mof;
+                        rt.rtntype = listitem.rtntype;
+                        rt.ret_prd = listitem.ret_prd;
+                        rt.status = listitem.status;
+                        rt.valid = listitem.valid;
+
+                        eList.Add(rt);
+
+                    }
+
+                }
+                else
+                {
+                    break;
+                }
+
+
+            }
+
+            return View("ReturnStatus",eList);
+        }
+
         public string BreadCrumb { set { @ViewBag.BreadCrumb = value; } }
 
     }
